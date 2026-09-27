@@ -18,7 +18,7 @@ import pandas as pd
 import psycopg
 from confluent_kafka import Consumer, Producer, TopicPartition
 from psycopg.rows import dict_row
-from pyspark.sql import DataFrame, SparkSession, Window
+from pyspark.sql import DataFrame, SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.functions import pandas_udf
 from pyspark.sql.types import DoubleType, IntegerType, StringType, StructField, StructType
@@ -30,8 +30,8 @@ from common.aqi import compute_aqi
 from common.config import BRONZE_PATH, CHECKPOINTS, TOPIC_ALERTS, TOPIC_MEASUREMENTS, TOPIC_SENSORS
 from common.geo import get_borough
 from common.quality import spark_quality_flag
-from common.schemas import MEASUREMENT_STRUCT, SENSOR_STRUCT
-from common.spark_utils import create_spark_session
+from common.schemas import MEASUREMENT_STRUCT
+from common.spark_utils import create_spark_session, read_sensor_metadata
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(name)s - %(message)s")
 logger = logging.getLogger("aq_streaming")
@@ -128,21 +128,7 @@ class MetadataCache:
         return True
 
     def _load(self, spark: SparkSession, offsets):
-        raw = (spark.read.format("kafka")
-               .option("kafka.bootstrap.servers", KAFKA_BOOTSTRAP)
-               .option("subscribe", TOPIC_SENSORS)
-               .option("startingOffsets", "earliest")
-               .option("endingOffsets", "latest")
-               .load())
-        # Bản mới nhất mỗi key theo offset; bỏ key mà bản mới nhất là tombstone
-        latest = (raw.withColumn("rn", F.row_number().over(
-                      Window.partitionBy("key").orderBy(F.col("partition").desc(), F.col("offset").desc())))
-                  .filter("rn = 1")
-                  .filter(F.col("value").isNotNull())
-                  .select(F.from_json(F.col("value").cast("string"), SENSOR_STRUCT).alias("m"))
-                  .select("m.*")
-                  .filter(F.col("sensor_id").isNotNull()))
-        rows = latest.collect()
+        rows = read_sensor_metadata(spark, KAFKA_BOOTSTRAP).collect()
         # Metadata nhỏ -> gán borough trên driver bằng shapely
         records = [(r.sensor_id, r.location_id, r.location_name, r.parameter, r.units, r.lat, r.lon,
                     get_borough(r.lat, r.lon)) for r in rows]

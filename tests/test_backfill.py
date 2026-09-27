@@ -1,42 +1,35 @@
+import json
+from datetime import date
+
 import pytest
-from pyspark.sql import SparkSession
-import sys
-from pathlib import Path
 
-sys.path.append(str(Path(__file__).parent.parent))
-from jobs.batch.backfill_archive import transform_backfill
+pytest.importorskip("pyspark")
+from jobs.batch.backfill_archive import archive_paths, month_range, transform_backfill  # noqa: E402
 
-@pytest.fixture(scope="session")
-def spark():
-    return (SparkSession.builder.master("local[1]").appName("pytest-spark").getOrCreate())
+COLS = ["location_id", "sensors_id", "location", "datetime", "lat", "lon", "parameter", "units", "value"]
+
+
+def test_month_range_and_paths():
+    assert list(month_range(date(2024, 11, 15), date(2025, 1, 2))) == [(2024, 11), (2024, 12), (2025, 1)]
+    assert archive_paths([2178], date(2024, 1, 1), date(2024, 1, 31)) == [
+        "s3a://openaq-data-archive/records/csv.gz/locationid=2178/year=2024/month=01/*.csv.gz"]
+
 
 def test_transform_backfill(spark):
-    # Dữ liệu giả lập 1 trạm trong NYC và 1 trạm ngoài NYC
-    data = [
-        # Trạm trong NYC
-        (1, 101, "Queens College", "2026-09-26T14:00:00Z", 40.73, -73.82, "pm25", "µg/m³", 20.5),
-        # Trạm ngoài NYC (ví dụ Cali)
-        (2, 102, "California", "2026-09-26T14:00:00Z", 34.05, -118.24, "pm25", "µg/m³", 10.0)
-    ]
-    schema = ["location_id", "sensors_id", "location", "datetime", "lat", "lon", "parameter", "units", "value"]
-    df = spark.createDataFrame(data, schema)
-    
-    nyc_bbox = "-74.26,40.49,-73.70,40.92"
-    result_df = transform_backfill(df, nyc_bbox)
-    
-    results = result_df.collect()
-    
-    # Assert
-    assert len(results) == 1 # Chỉ còn trạm NYC
-    
-    row = results[0]
+    df = spark.createDataFrame([
+        ("2178", "3916", "Queens College", "2024-07-01T22:00:00-04:00", "40.73", "-73.82", "pm25", "µg/m³", "20.5"),
+        ("9", "9", "Los Angeles", "2024-07-01T10:00:00-07:00", "34.05", "-118.24", "pm25", "µg/m³", "10.0"),
+        ("2178", "3916", "Queens College", "2023-01-01T00:00:00-05:00", "40.73", "-73.82", "pm25", "µg/m³", "5"),
+    ], COLS)
+    rows = transform_backfill(df, "-74.26,40.49,-73.70,40.92", date(2024, 1, 1), date(2024, 12, 31),
+                              ingested_at="2026-09-27T00:00:00Z").collect()
+    assert len(rows) == 1  # ngoài bbox và ngoài khoảng ngày bị loại
+    row = rows[0]
     assert row["topic"] == "aq.openaq.measurements.v1"
-    assert row["partition"] == 0
-    assert row["offset"] == 0
-    assert "2026-09-26" in str(row["ingest_date"])
-    
-    # Kiểm tra json string value
-    val_json = row["value"]
-    assert "openaq-archive" in val_json
-    assert "Queens College" in val_json
-    assert "pm25" in val_json
+    assert str(row["ingest_date"]) == "2024-07-02"  # ngày UTC của bản đo
+    rec = json.loads(row["value"])
+    assert rec["datetime_utc"] == "2024-07-02T02:00:00Z"
+    assert rec["datetime_local"] == "2024-07-01T22:00:00-04:00"
+    assert (rec["sensor_id"], rec["location_id"], rec["value"]) == (3916, 2178, 20.5)
+    assert (rec["parameter"], rec["units"], rec["location_name"]) == ("pm25", "µg/m³", "Queens College")
+    assert rec["source"] == "openaq-archive" and rec["ingested_at"] == "2026-09-27T00:00:00Z"

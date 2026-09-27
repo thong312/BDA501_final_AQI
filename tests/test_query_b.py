@@ -4,17 +4,13 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
-from pyspark.sql import SparkSession
+
+pytest.importorskip("pyspark")
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from jobs.streaming.aq_streaming import (META_SCHEMA, aqi_instant_udf, enrich_and_flag, parse_measurements,
                                          station_aqi)
 
-
-@pytest.fixture(scope="module")
-def spark():
-    return (SparkSession.builder.master("local[1]").appName("test-query-b")
-            .config("spark.sql.session.timeZone", "UTC").getOrCreate())
 
 
 def kafka_rows(spark, payloads):

@@ -20,3 +20,64 @@ def create_spark_session(app_name: str, conf: dict = None) -> SparkSession:
     spark = builder.getOrCreate()
     spark.sparkContext.setLogLevel("WARN")
     return spark
+
+
+def explain_string(df, mode: str = "formatted") -> str:
+    """Nội dung df.explain(mode) dưới dạng chuỗi để lưu vào reports/plans/."""
+    return df._sc._jvm.PythonSQLUtils.explainString(df._jdf.queryExecution(), mode)
+
+
+def _fs_path(spark, path):
+    jpath = spark._jvm.org.apache.hadoop.fs.Path(path)
+    return jpath.getFileSystem(spark._jsc.hadoopConfiguration()), jpath
+
+
+def existing_paths(spark, paths):
+    """Lọc các path/glob có dữ liệu. Trả (danh sách path, tổng bytes)."""
+    found, total = [], 0
+    for p in paths:
+        fs, jpath = _fs_path(spark, p)
+        statuses = fs.globStatus(jpath)
+        if statuses:
+            found.append(p)
+            for st in statuses:
+                total += fs.getContentSummary(st.getPath()).getLength()
+    return found, total
+
+
+def path_size(spark, path) -> int:
+    fs, jpath = _fs_path(spark, path)
+    return fs.getContentSummary(jpath).getLength() if fs.exists(jpath) else 0
+
+
+def write_text(spark, path: str, text: str):
+    """Ghi một file text duy nhất (không phải thư mục part-*) lên S3/HDFS."""
+    fs, jpath = _fs_path(spark, path)
+    out = fs.create(jpath, True)
+    try:
+        out.write(bytearray(text.encode("utf-8")))
+    finally:
+        out.close()
+
+
+def read_sensor_metadata(spark, bootstrap: str):
+    """Topic compacted aq.openaq.sensors.v1 -> bản mới nhất mỗi sensor (theo offset), bỏ tombstone."""
+    from pyspark.sql import Window
+    from pyspark.sql import functions as F
+
+    from common.config import TOPIC_SENSORS
+    from common.schemas import SENSOR_STRUCT
+
+    raw = (spark.read.format("kafka")
+           .option("kafka.bootstrap.servers", bootstrap)
+           .option("subscribe", TOPIC_SENSORS)
+           .option("startingOffsets", "earliest")
+           .option("endingOffsets", "latest")
+           .load())
+    return (raw.withColumn("rn", F.row_number().over(
+                Window.partitionBy("key").orderBy(F.col("partition").desc(), F.col("offset").desc())))
+            .filter("rn = 1")
+            .filter(F.col("value").isNotNull())
+            .select(F.from_json(F.col("value").cast("string"), SENSOR_STRUCT).alias("m"))
+            .select("m.*")
+            .filter(F.col("sensor_id").isNotNull()))

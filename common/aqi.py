@@ -91,6 +91,7 @@ def compute_aqi(parameter, value, units, averaging: str = "instant") -> Optional
     averaging:
       "instant" — bản đo đơn lẻ (streaming). O3 lấy max của bảng 8h và bảng 1h.
       "8h"      — giá trị đã là trung bình 8h (O3, CO trong batch).
+      "1h"      — O3 trung bình 1h, chỉ dùng bảng o3_1h (định nghĩa từ USG trở lên).
       "24h"     — giá trị đã là trung bình 24h (PM2.5, PM10 trong batch).
     Chất không có bảng breakpoint -> None.
     """
@@ -113,6 +114,8 @@ def compute_aqi(parameter, value, units, averaging: str = "instant") -> Optional
         if averaging == "8h":
             # 8h không định nghĩa trên 0.200 ppm -> dùng bảng 1h theo hướng dẫn EPA
             return aqi_8h if aqi_8h is not None else aqi_1h
+        if averaging == "1h":
+            return aqi_1h
         candidates = [a for a in (aqi_8h, aqi_1h) if a is not None]
         return max(candidates) if candidates else None
 

@@ -1,34 +1,27 @@
-import os
-import time
+"""Thí nghiệm hiệu năng (M12): broadcast bật/tắt và số partition, kết quả reports/perf/perf_results.csv."""
 import csv
 import logging
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import broadcast
+import sys
+import time
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
+
+from pyspark.sql.functions import broadcast
+
+from common.config import GOLD_PATH, REPORTS_DIR, SILVER_PATH
+from common.spark_utils import create_spark_session
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def create_spark_session():
-    S3_ENDPOINT = os.getenv("S3_ENDPOINT", "http://localhost:4566")
-    S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY", "test")
-    S3_SECRET_KEY = os.getenv("S3_SECRET_KEY", "test")
-    return (SparkSession.builder
-            .appName("AQ_Performance_Test")
-            .config("spark.hadoop.fs.s3a.endpoint", S3_ENDPOINT)
-            .config("spark.hadoop.fs.s3a.access.key", S3_ACCESS_KEY)
-            .config("spark.hadoop.fs.s3a.secret.key", S3_SECRET_KEY)
-            .config("spark.hadoop.fs.s3a.path.style.access", "true")
-            .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-            .getOrCreate())
 
 if __name__ == "__main__":
-    spark = create_spark_session()
-    spark.sparkContext.setLogLevel("WARN")
+    spark = create_spark_session("AQ_Performance_Test")
     
     # Truy xuất dữ liệu (cần chạy M7, M9 trước)
-    silver_path = "s3a://aq-lake/silver/measurements/"
-    dim_path = "s3a://aq-lake/gold/dim_station/"
+    silver_path = SILVER_PATH
+    dim_path = f"{GOLD_PATH}dim_station"
     
     logger.info("Đang đọc dữ liệu cho thí nghiệm...")
     try:
@@ -36,7 +29,7 @@ if __name__ == "__main__":
         df_dim = spark.read.parquet(dim_path)
     except Exception as e:
         logger.error("Dữ liệu Silver/Gold chưa có sẵn để đo hiệu năng. Vui lòng chạy luồng Data Pipeline trước.")
-        import sys; sys.exit(0)
+        sys.exit(1)
 
     results = []
 
@@ -68,7 +61,7 @@ if __name__ == "__main__":
     results.append({"experiment": "Broadcast_20_Partitions", "time_seconds": round(end - start, 2), "records": c3})
 
     # LƯU KẾT QUẢ VÀO FILE BÁO CÁO
-    report_dir = Path(__file__).parent.parent.parent / "reports" / "perf"
+    report_dir = REPORTS_DIR / "perf"
     report_dir.mkdir(parents=True, exist_ok=True)
     report_file = report_dir / "perf_results.csv"
     

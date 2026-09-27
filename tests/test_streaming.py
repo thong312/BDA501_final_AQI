@@ -4,16 +4,12 @@ from datetime import datetime
 from pathlib import Path
 
 import pytest
-from pyspark.sql import SparkSession
+
+pytest.importorskip("pyspark")
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from jobs.streaming.aq_streaming import build_query_a_df
 
-
-@pytest.fixture(scope="module")
-def spark():
-    return (SparkSession.builder.master("local[1]").appName("test-query-a")
-            .config("spark.sql.session.timeZone", "UTC").getOrCreate())
 
 
 def test_build_query_a_df(spark):
