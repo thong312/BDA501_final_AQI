@@ -1,49 +1,125 @@
+"""Unit test bắt buộc của ARCHITECTURE mục 8."""
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent))
 
-from common.alert_rules import decide, get_level, get_level_name
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-def test_alert_rules_escalate():
-    state = {}
-    
-    # Lên USG (2) nhưng cần 2 lần xác nhận (CONFIRM_N = 2)
-    state, alert = decide(state, 120, "2026-09-26T10:00:00Z")
-    assert state["alerted_level"] == 0 # Vẫn chưa báo
-    assert alert is None
-    
-    # Lần 2 xác nhận
-    state, alert = decide(state, 130, "2026-09-26T10:15:00Z")
+from common.alert_rules import check_timeout, decide
+
+T0 = datetime(2026, 9, 26, 10, 0, tzinfo=timezone.utc)
+
+
+def run(aqis, state=None, step_min=15):
+    """Chạy một chuỗi AQI, trả về state cuối và danh sách (aqi, alert)."""
+    state = state or {}
+    out = []
+    for i, aqi in enumerate(aqis):
+        state, alert = decide(state, aqi, T0 + timedelta(minutes=step_min * i))
+        out.append(alert)
+    return state, out
+
+
+def types(alerts):
+    return [a["type"] if a else None for a in alerts]
+
+
+def test_rising_through_thresholds():
+    state, alerts = run([40, 80, 120, 130, 160])
+    # 120 lần 1 chưa báo, 130 xác nhận USG, 160 báo ngay UNHEALTHY
+    assert types(alerts) == [None, None, None, "ESCALATE", "ESCALATE"]
+    assert alerts[3]["level"] == "USG" and alerts[3]["prev_level"] == "MODERATE"
+    assert alerts[4]["level"] == "UNHEALTHY"
+    assert state["alerted_level"] == 3
+
+
+def test_oscillating_around_100_does_not_spam():
+    _, alerts = run([99, 101, 99, 101, 99, 101, 99])
+    assert all(a is None for a in alerts)
+
+
+def test_jump_straight_to_180():
+    state, alerts = run([40, 180])
+    assert types(alerts) == [None, "ESCALATE"]
+    assert alerts[1]["level"] == "UNHEALTHY" and alerts[1]["prev_level"] == "GOOD"
+
+
+def test_jump_multiple_levels_reports_highest():
+    _, alerts = run([40, 350])
+    assert alerts[1]["level"] == "HAZARDOUS"
+
+
+def test_drop_to_95_is_not_recovered():
+    # USG, ngưỡng dưới 101 - HYST 10 = 91 -> 95 nằm trong vùng hysteresis
+    state, alerts = run([120, 120, 95, 95, 95])
+    assert types(alerts) == [None, "ESCALATE", None, None, None]
     assert state["alerted_level"] == 2
-    assert alert is not None
-    assert alert["type"] == "ESCALATE"
-    assert alert["level"] == "USG"
 
-def test_alert_rules_urgent():
-    state = {}
-    # Lên thẳng Unhealthy (3) -> báo ngay lập tức
-    state, alert = decide(state, 160, "2026-09-26T10:00:00Z")
-    assert state["alerted_level"] == 3
-    assert alert is not None
-    assert alert["type"] == "ESCALATE"
 
-def test_alert_rules_ignore_old_data():
-    state = {"last_event_time": "2026-09-26T10:00:00Z", "alerted_level": 3}
-    # Bản đo trễ
-    state, alert = decide(state, 50, "2026-09-26T09:00:00Z")
-    assert alert is None
-    assert state["alerted_level"] == 3
-
-def test_alert_rules_recover():
-    state = {"last_event_time": "2026-09-26T10:00:00Z", "alerted_level": 2, "candidate_level": 2, "candidate_count": 2}
-    
-    # Giảm về Moderate (1)
-    state, alert = decide(state, 90, "2026-09-26T11:00:00Z")
-    assert state["alerted_level"] == 2 # Chưa qua CONFIRM_N
-    assert alert is None
-    
-    # Lần 2
-    state, alert = decide(state, 85, "2026-09-26T11:15:00Z")
+def test_drop_to_85_twice_is_recovered():
+    state, alerts = run([120, 120, 85, 85])
+    assert types(alerts) == [None, "ESCALATE", None, "RECOVERED"]
+    assert alerts[3]["level"] == "MODERATE" and alerts[3]["prev_level"] == "USG"
     assert state["alerted_level"] == 1
-    assert alert is not None
-    assert alert["type"] == "RECOVERED"
+
+
+def test_recovery_needs_consecutive_readings():
+    _, alerts = run([120, 120, 85, 95, 85])
+    assert types(alerts)[2:] == [None, None, None]
+
+
+def test_late_reading_is_ignored():
+    state, _ = run([160])
+    before = dict(state)
+    state, alert = decide(state, 20, T0 - timedelta(hours=1))
+    assert alert is None and state == before
+    state, alert = decide(state, 20, T0)  # trùng event_time cũng bị bỏ
+    assert alert is None and state == before
+
+
+def test_replay_same_reading_no_duplicate_alert():
+    state, alerts = run([180])
+    assert alerts[0] is not None
+    _, alert = decide(state, 180, T0)
+    assert alert is None
+
+
+def test_missing_data_3h_goes_unknown():
+    state, _ = run([180])
+    s2, alert = check_timeout(state, T0 + timedelta(hours=2))
+    assert alert is None
+    s3, alert = check_timeout(state, T0 + timedelta(hours=3, minutes=1))
+    assert alert["type"] == "UNKNOWN" and alert["prev_level"] == "UNHEALTHY"
+    assert s3["alerted_level"] == -1
+    # Dữ liệu quay lại ở mức thấp: không gửi RECOVERED
+    s4, alert = decide(s3, 30, T0 + timedelta(hours=4))
+    assert alert is None and s4["alerted_level"] == 0
+
+
+def test_timeout_ignored_below_usg():
+    state, _ = run([80])
+    _, alert = check_timeout(state, T0 + timedelta(hours=5))
+    assert alert is None
+
+
+def test_cooldown_blocks_same_level_but_not_escalation():
+    # UNHEALTHY -> hạ về USG (lặng lẽ) -> lại UNHEALTHY trong 1h: không báo lại;
+    # lên VERY_UNHEALTHY là tăng mức mới nên vẫn báo ngay
+    state, alerts = run([160, 120, 120, 160, 210], step_min=5)
+    assert types(alerts) == ["ESCALATE", None, None, None, "ESCALATE"]
+    assert alerts[4]["level"] == "VERY_UNHEALTHY"
+    # Sau cooldown (alert UNHEALTHY cuối lúc T0) thì báo lại được
+    state = {"alerted_level": 2, "last_event_time": T0 + timedelta(minutes=90),
+             "last_alert_at": T0, "last_alert_level": 3}
+    _, alert = decide(state, 160, T0 + timedelta(minutes=95))
+    assert alert["level"] == "UNHEALTHY"
+
+
+def test_region_level_input_skips_aqi_hysteresis():
+    state = {}
+    state, a1 = decide(state, 120, T0, level=2)
+    state, a2 = decide(state, 120, T0 + timedelta(minutes=5), level=2)
+    assert a1 is None and a2["level"] == "USG"
+    state, _ = decide(state, 99, T0 + timedelta(minutes=10), level=1)
+    state, a4 = decide(state, 99, T0 + timedelta(minutes=15), level=1)
+    assert a4["type"] == "RECOVERED"

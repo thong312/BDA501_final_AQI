@@ -47,6 +47,7 @@ CREATE TABLE realtime.station_status (
     candidate_count    INT NOT NULL DEFAULT 0,
     last_event_time    TIMESTAMPTZ,
     last_alert_at      TIMESTAMPTZ,
+    last_alert_level   INT,          -- phục vụ cooldown (luật 6)
     updated_at         TIMESTAMPTZ
 );
 
@@ -58,7 +59,9 @@ CREATE TABLE realtime.region_status (
     candidate_level     INT,
     candidate_count     INT NOT NULL DEFAULT 0,
     last_event_time     TIMESTAMPTZ,
-    last_alert_at       TIMESTAMPTZ
+    last_alert_at       TIMESTAMPTZ,
+    last_alert_level    INT,
+    updated_at          TIMESTAMPTZ
 );
 INSERT INTO realtime.region_status (borough) VALUES
     ('Manhattan'), ('Brooklyn'), ('Queens'), ('Bronx'), ('Staten Island');
