@@ -1,114 +1,198 @@
-import os
-import time
+"""Poller OpenAQ v3 -> Kafka (ARCHITECTURE 6.1).
+
+Hai vòng lặp:
+1. Metadata: khi khởi động + mỗi 24h, publish mỗi sensor vào aq.openaq.sensors.v1 (key sensor_id).
+2. Bản đo: mỗi POLL_INTERVAL_SEC, /locations/{id}/latest -> measurements hoặc DLQ.
+"""
 import logging
-import requests
+import os
+import random
 import threading
+import time
+
+import requests
 from confluent_kafka import Producer
 
-import sys
-from pathlib import Path
-sys.path.append(str(Path(__file__).parent.parent.parent))
-from services.poller.parser import parse_sensor_metadata, parse_measurements
+from services.poller.parser import parse_measurements, parse_sensor_metadata
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger("poller")
 
+API_BASE = "https://api.openaq.org"
 API_KEY = os.getenv("OPENAQ_API_KEY", "")
-KAFKA_BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP", "localhost:9092")
+KAFKA_BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP", "localhost:29092")
 POLL_INTERVAL = int(os.getenv("POLL_INTERVAL_SEC", "600"))
 BBOX = os.getenv("NYC_BBOX", "-74.26,40.49,-73.70,40.92")
+METADATA_INTERVAL = 24 * 3600
+METADATA_RETRY_SEC = 300
+MAX_RETRIES = 5
+# OpenAQ giới hạn 60 request/phút -> giãn cách tối thiểu giữa 2 request
+MIN_REQUEST_GAP_SEC = 1.1
 
-HEADERS = {"X-API-Key": API_KEY} if API_KEY else {}
 TOPIC_SENSORS = "aq.openaq.sensors.v1"
 TOPIC_MEASUREMENTS = "aq.openaq.measurements.v1"
 TOPIC_DLQ = "aq.openaq.measurements.v1.dlq"
 
 producer = Producer({
-    'bootstrap.servers': KAFKA_BOOTSTRAP,
-    'acks': 'all',
-    'enable.idempotence': True,
-    'linger.ms': 50
+    "bootstrap.servers": KAFKA_BOOTSTRAP,
+    "acks": "all",
+    "enable.idempotence": True,
+    "linger.ms": 50,
 })
 
-location_cache = {}
+session = requests.Session()
+if API_KEY:
+    session.headers["X-API-Key"] = API_KEY
 
-def fetch_metadata():
-    url = f"https://api.openaq.org/v3/locations?bbox={BBOX}&limit=1000"
+# location_id -> (lat, lon); ghi bởi vòng metadata, đọc bởi vòng bản đo
+locations = {}
+locations_lock = threading.Lock()
+metadata_ready = threading.Event()
+_request_lock = threading.Lock()
+_last_request_at = 0.0
+
+
+class ApiError(Exception):
+    pass
+
+
+def _delivery_report(err, msg):
+    if err is not None:
+        logger.error("Kafka delivery failed topic=%s key=%s: %s", msg.topic(), msg.key(), err)
+
+
+def _throttle():
+    global _last_request_at
+    with _request_lock:
+        wait = _last_request_at + MIN_REQUEST_GAP_SEC - time.monotonic()
+        if wait > 0:
+            time.sleep(wait)
+        _last_request_at = time.monotonic()
+
+
+def api_get(path, params=None):
+    """GET có retry + exponential backoff cho 429/5xx/lỗi mạng; tôn trọng header rate limit."""
+    url = f"{API_BASE}{path}"
+    for attempt in range(MAX_RETRIES):
+        _throttle()
+        try:
+            resp = session.get(url, params=params, timeout=15)
+        except requests.RequestException as e:
+            delay = min(60, 2 ** attempt) + random.random()
+            logger.warning("Request error %s (attempt %d): %s; retry in %.1fs", path, attempt + 1, e, delay)
+            time.sleep(delay)
+            continue
+        if resp.status_code == 429 or resp.status_code >= 500:
+            retry_after = resp.headers.get("Retry-After") or resp.headers.get("x-ratelimit-reset")
+            try:
+                delay = float(retry_after)
+            except (TypeError, ValueError):
+                delay = min(60, 2 ** attempt) + random.random()
+            logger.warning("HTTP %d %s (attempt %d); retry in %.1fs", resp.status_code, path, attempt + 1, delay)
+            time.sleep(delay)
+            continue
+        if resp.status_code >= 400:
+            raise ApiError(f"HTTP {resp.status_code} {path}: {resp.text[:200]}")
+        if resp.headers.get("x-ratelimit-remaining") == "0":
+            reset = float(resp.headers.get("x-ratelimit-reset", "60"))
+            logger.info("Rate limit exhausted, sleeping %.0fs", reset)
+            time.sleep(reset)
+        return resp.json()
+    raise ApiError(f"Giving up after {MAX_RETRIES} attempts: {path}")
+
+
+def fetch_metadata() -> bool:
     try:
-        resp = requests.get(url, headers=HEADERS, timeout=10)
-        resp.raise_for_status()
-        results = resp.json().get("results", [])
-        
-        for loc in results:
-            sensors = parse_sensor_metadata(loc)
-            for s in sensors:
-                producer.produce(TOPIC_SENSORS, key=str(s.sensor_id).encode('utf-8'), value=s.model_dump_json().encode('utf-8'))
-            if "id" in loc and "coordinates" in loc:
-                location_cache[loc["id"]] = (
-                    loc["coordinates"].get("latitude", 0),
-                    loc["coordinates"].get("longitude", 0)
-                )
-        producer.flush()
-        logger.info(f"Published metadata for {len(results)} locations.")
-    except Exception as e:
-        logger.error(f"Error fetching metadata: {e}")
+        data = api_get("/v3/locations", params={"bbox": BBOX, "limit": 1000})
+    except ApiError as e:
+        logger.error("Metadata fetch failed: %s", e)
+        return False
+    results = data.get("results", [])
+    new_locations = {}
+    n_sensors = 0
+    for loc in results:
+        # Publish lại kể cả khi không đổi (topic compacted, Spark đọc bản mới nhất)
+        for s in parse_sensor_metadata(loc):
+            producer.produce(TOPIC_SENSORS, key=str(s.sensor_id).encode(),
+                             value=s.model_dump_json().encode(), on_delivery=_delivery_report)
+            n_sensors += 1
+        coords = loc.get("coordinates") or {}
+        if loc.get("id") is not None:
+            new_locations[loc["id"]] = (coords.get("latitude"), coords.get("longitude"))
+    producer.flush()
+    with locations_lock:
+        locations.clear()
+        locations.update(new_locations)
+    logger.info("Published metadata: %d locations, %d sensors", len(new_locations), n_sensors)
+    metadata_ready.set()
+    return True
+
 
 def fetch_measurements():
-    if not location_cache:
-        logger.warning("No locations in cache. Skipping measurement poll.")
-        return
-
-    total_ok = 0
-    total_dlq = 0
-    
-    for loc_id, (lat, lon) in location_cache.items():
+    with locations_lock:
+        snapshot = dict(locations)
+    ok = failed = http_failed = 0
+    for loc_id, (lat, lon) in snapshot.items():
         endpoint = f"/v3/locations/{loc_id}/latest"
-        url = f"https://api.openaq.org{endpoint}"
         try:
-            resp = requests.get(url, headers=HEADERS, timeout=10)
-            if resp.status_code == 429:
-                time.sleep(2)
-                resp = requests.get(url, headers=HEADERS, timeout=10)
-            resp.raise_for_status()
-            
-            results = resp.json().get("results", [])
-            ok_list, dlq_list = parse_measurements(results, loc_id, lat, lon, endpoint)
-            
-            for m in ok_list:
-                producer.produce(TOPIC_MEASUREMENTS, key=str(m.location_id).encode('utf-8'), value=m.model_dump_json().encode('utf-8'))
-                total_ok += 1
-                
-            for d in dlq_list:
-                producer.produce(TOPIC_DLQ, key=str(loc_id).encode('utf-8'), value=d.model_dump_json().encode('utf-8'))
-                total_dlq += 1
-                
-        except Exception as e:
-            pass
-            
+            data = api_get(endpoint)
+        except ApiError as e:
+            http_failed += 1
+            logger.error("Measurement fetch failed %s: %s", endpoint, e)
+            continue
+        ok_list, dlq_list = parse_measurements(data.get("results", []), loc_id, lat, lon, endpoint)
+        for m in ok_list:
+            producer.produce(TOPIC_MEASUREMENTS, key=str(m.location_id).encode(),
+                             value=m.model_dump_json().encode(), on_delivery=_delivery_report)
+        for d in dlq_list:
+            producer.produce(TOPIC_DLQ, value=d.model_dump_json().encode(), on_delivery=_delivery_report)
+        ok += len(ok_list)
+        failed += len(dlq_list)
+        producer.poll(0)
     producer.flush()
-    total = total_ok + total_dlq
-    ratio = total_dlq / total if total > 0 else 0
-    
-    logger.info(f"Measurement poll complete: ok={total_ok}, failed={total_dlq}, ratio={ratio:.2f}")
-    if ratio > 0.05 or (total > 0 and total_ok == 0):
-        logger.warning(f"High failure rate detected: ratio={ratio:.2f}")
+
+    total = ok + failed
+    ratio = failed / total if total else 0.0
+    logger.info("Measurement poll complete: locations=%d ok=%d failed=%d http_failed=%d ratio=%.3f",
+                len(snapshot), ok, failed, http_failed, ratio)
+    if snapshot and ok == 0:
+        logger.warning("100%% failure in this poll (ok=0, failed=%d, http_failed=%d)", failed, http_failed)
+    elif ratio > 0.05:
+        logger.warning("High DLQ ratio: %.3f", ratio)
+
 
 def metadata_loop():
     while True:
-        fetch_metadata()
-        time.sleep(86400)
+        success = fetch_metadata()
+        time.sleep(METADATA_INTERVAL if success else METADATA_RETRY_SEC)
+
 
 def measurement_loop():
-    time.sleep(10)
+    metadata_ready.wait()
     while True:
-        fetch_measurements()
-        time.sleep(POLL_INTERVAL)
+        started = time.monotonic()
+        try:
+            fetch_measurements()
+        except Exception:
+            logger.exception("Unexpected error in measurement poll")
+        time.sleep(max(0.0, POLL_INTERVAL - (time.monotonic() - started)))
+
+
+def main():
+    logger.info("Starting poller: kafka=%s bbox=%s interval=%ss", KAFKA_BOOTSTRAP, BBOX, POLL_INTERVAL)
+    threads = [threading.Thread(target=metadata_loop, daemon=True, name="metadata"),
+               threading.Thread(target=measurement_loop, daemon=True, name="measurements")]
+    for t in threads:
+        t.start()
+    try:
+        while all(t.is_alive() for t in threads):
+            time.sleep(5)
+        logger.error("A poller thread died, exiting so the container restarts")
+    except KeyboardInterrupt:
+        pass
+    finally:
+        producer.flush(10)
+
 
 if __name__ == "__main__":
-    logger.info("Starting Poller Service...")
-    t1 = threading.Thread(target=metadata_loop, daemon=True)
-    t2 = threading.Thread(target=measurement_loop, daemon=True)
-    t1.start()
-    t2.start()
-    t1.join()
-    t2.join()
+    main()

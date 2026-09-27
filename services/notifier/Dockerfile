@@ -4,4 +4,4 @@ COPY services/notifier/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY services/notifier/ services/notifier/
 ENV PYTHONPATH=/app
-CMD ["python", "services/notifier/main.py"]
+CMD ["python", "-m", "services.notifier.main"]
