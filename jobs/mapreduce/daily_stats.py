@@ -15,6 +15,7 @@ KHÔNG dùng combiner: combiner cộng dồn cục bộ trước khi dedupe, nê
 Reducer cần thấy toàn bộ bản ghi gốc của một key để dedupe trước khi tổng hợp.
 """
 import json
+import os
 import sys
 from datetime import timezone
 from pathlib import Path
@@ -101,10 +102,11 @@ class DailyStatsMR(MRJob):
     def configure_args(self):
         super().configure_args()
         self.add_file_arg("--lookup", help="validation/sensor_lookup.json (JSON Lines)")
-        self.add_passthru_arg("--bbox", default=DEFAULT_BBOX)
         self.add_passthru_arg("--date", default=None, help="Chỉ giữ date_local này (YYYY-MM-DD)")
 
     def mapper_init(self):
+        # bbox lấy từ env như các thành phần khác (giá trị bắt đầu bằng '-' không truyền được qua argv)
+        self.bbox = os.getenv("NYC_BBOX", DEFAULT_BBOX)
         self.lookup = {}
         if self.options.lookup:
             with open(self.options.lookup, "r", encoding="utf-8") as f:
@@ -114,7 +116,7 @@ class DailyStatsMR(MRJob):
                         self.lookup[d["sensor_id"]] = d
 
     def mapper(self, _, line):
-        out = map_record(line, self.lookup, self.options.bbox, self.options.date)
+        out = map_record(line, self.lookup, self.bbox, self.options.date)
         if out is not None:
             yield out
 

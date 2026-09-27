@@ -99,10 +99,11 @@ def transform_silver(df_parsed: DataFrame, df_meta: DataFrame, bbox_str: str,
     # 3. Lọc bbox NYC
     df = df.filter(F.col("lat").between(min_lat, max_lat) & F.col("lon").between(min_lon, max_lon))
 
-    # 4. Quality flag (cùng luật với Streaming/MapReduce); batch giữ STALE
+    # 4. Quality flag (cùng luật với Streaming/MapReduce); batch giữ STALE.
+    #    STALE chỉ có nghĩa với dữ liệu realtime: ingested_at của backfill là lúc chạy backfill.
+    reference_ts = F.when(F.col("source") != "openaq-archive", F.to_timestamp("ingested_at"))
     df = df.withColumn("quality_flag", spark_quality_flag(
-        F.col("parameter"), F.col("units"), F.col("value"), F.col("event_time"),
-        F.to_timestamp("ingested_at")))
+        F.col("parameter"), F.col("units"), F.col("value"), F.col("event_time"), reference_ts))
     stats["flagged"] = df
     df = df.filter(~F.col("quality_flag").isin(*BATCH_DROP_FLAGS))
 

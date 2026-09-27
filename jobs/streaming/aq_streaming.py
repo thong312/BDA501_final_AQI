@@ -274,16 +274,19 @@ def publish_pending_alerts():
             return
         delivered = []
 
-        def on_delivery(err, msg):
-            if err is None:
-                delivered.append(msg.headers()[0][1].decode())
-            else:
-                logger.error("Alert publish failed: %s", err)
+        def on_delivery(alert_id):
+            # Delivery report không mang header của message -> gắn alert_id qua closure
+            def callback(err, _msg):
+                if err is None:
+                    delivered.append(alert_id)
+                else:
+                    logger.error("Alert publish failed %s: %s", alert_id, err)
+            return callback
 
         for rec in pending:
             _producer.produce(TOPIC_ALERTS, key=(rec["borough"] or "").encode(),
                               value=json.dumps(alert_to_message(rec)).encode(),
-                              headers=[("alert_id", rec["alert_id"].encode())], on_delivery=on_delivery)
+                              on_delivery=on_delivery(rec["alert_id"]))
         _producer.flush(15)
         if delivered:
             cur.execute("UPDATE realtime.alerts SET published_at = now() WHERE alert_id = ANY(%s)", (delivered,))
@@ -376,6 +379,7 @@ def _process_batch(batch_df: DataFrame, batch_id: int):
     batch_df = batch_df.persist()
     try:
         if batch_df.isEmpty():
+            logger.info("batch %d: no new readings after watermark dedupe", batch_id)
             return
         now = datetime.now(timezone.utc)
 

@@ -1,6 +1,8 @@
 import os
 import json
 import logging
+from collections import OrderedDict
+
 import requests
 from confluent_kafka import Consumer, KafkaError
 
@@ -50,6 +52,24 @@ def send_telegram(message):
     except Exception as e:
         logger.error(f"Lỗi cấu hình mạng gửi Telegram: {e}")
 
+class SeenAlerts:
+    """Nhớ các alert_id gần đây. Topic là at-least-once (outbox có thể gửi lại sau sự cố),
+    nên notifier bỏ qua alert_id đã gửi để người dân không nhận trùng."""
+
+    def __init__(self, capacity=10000):
+        self.capacity = capacity
+        self._ids = OrderedDict()
+
+    def check_and_add(self, alert_id) -> bool:
+        """True nếu alert_id mới (cần gửi), False nếu đã gặp."""
+        if alert_id in self._ids:
+            return False
+        self._ids[alert_id] = None
+        if len(self._ids) > self.capacity:
+            self._ids.popitem(last=False)
+        return True
+
+
 def main():
     conf = {
         'bootstrap.servers': KAFKA_BOOTSTRAP,
@@ -59,6 +79,7 @@ def main():
     
     consumer = Consumer(conf)
     consumer.subscribe(['aq.alerts.level-changed.v1'])
+    seen = SeenAlerts()
     
     logger.info("🚀 Notifier đã khởi động. Đang lắng nghe cảnh báo từ Kafka...")
     
@@ -76,7 +97,10 @@ def main():
                     
             try:
                 alert = json.loads(msg.value().decode('utf-8'))
-                
+                if not seen.check_and_add(alert.get("alert_id")):
+                    logger.info(f"Bỏ qua alert trùng {alert.get('alert_id')}")
+                    continue
+
                 # Format
                 text_msg = format_alert_message(alert)
                 

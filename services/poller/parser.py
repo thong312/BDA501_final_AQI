@@ -2,6 +2,8 @@
 
 Poller không tính AQI và không lọc giá trị âm — đó là việc của Spark.
 """
+from __future__ import annotations
+
 import json
 from datetime import datetime, timezone
 

@@ -69,8 +69,7 @@ def main():
         s3.download_file(BUCKET, LOOKUP_KEY, str(lookup))
         logger.info("MapReduce %s trên %d file Bronze", day, len(inputs))
 
-        job = DailyStatsMR(["-r", args.runner, "--lookup", str(lookup), "--date", str(day),
-                            "--bbox", os.getenv("NYC_BBOX", "-74.26,40.49,-73.70,40.92")] + inputs)
+        job = DailyStatsMR(["-r", args.runner, "--lookup", str(lookup), "--date", str(day)] + inputs)
         lines = []
         with job.make_runner() as runner:
             runner.run()

@@ -19,13 +19,13 @@ make up             # build image Spark/poller/notifier và chạy toàn bộ se
 
 | Dịch vụ | Địa chỉ |
 |---|---|
-| Kafka UI | http://localhost:8080 |
+| Kafka UI | http://localhost:8080 (đổi bằng `KAFKA_UI_PORT` nếu cổng bận) |
 | Spark master UI | http://localhost:8082 (job đang chạy: http://localhost:4040) |
 | MinIO console | http://localhost:9001 (`minioadmin` / `minioadmin123`) |
 | PostgreSQL | `localhost:5432`, db `aq`, user `aq_user` / `aq_password` |
 | Kafka từ máy host | `localhost:29092` |
 
-Các container `kafka-init`, `minio-init` và script `sql/init.sql` lần lượt tạo 4 topic, 2 bucket và schema `realtime`/`analytics`. DDL chỉ chạy khi volume Postgres còn trống; sửa DDL xong thì chạy `make reset && make up`.
+Container `kafka-init`, biến `MINIO_DEFAULT_BUCKETS` của MinIO và script `sql/init.sql` lần lượt tạo 4 topic, 2 bucket và schema `realtime`/`analytics`. DDL chỉ chạy khi volume Postgres còn trống; sửa DDL xong thì chạy `make reset && make up`.
 
 ## 2. Unit test (M2)
 

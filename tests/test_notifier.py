@@ -1,9 +1,12 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+import pytest
 
-from services.notifier.main import format_alert_message
+sys.path.insert(0, str(Path(__file__).parent.parent))
+pytest.importorskip("requests")
+pytest.importorskip("confluent_kafka")
+from services.notifier.main import SeenAlerts, format_alert_message  # noqa: E402
 
 
 def alert(**over):
@@ -24,3 +27,10 @@ def test_format_escalate():
 def test_format_unknown_without_aqi():
     msg = format_alert_message(alert(type="UNKNOWN", level="UNKNOWN", aqi=None, dominant_pollutant=None))
     assert "UNKNOWN" in msg and "None" not in msg
+
+
+def test_seen_alerts_dedupes_and_is_bounded():
+    seen = SeenAlerts(capacity=2)
+    assert seen.check_and_add("a") and not seen.check_and_add("a")
+    assert seen.check_and_add("b") and seen.check_and_add("c")
+    assert seen.check_and_add("a")  # "a" đã bị đẩy ra khỏi bộ nhớ
