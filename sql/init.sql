@@ -77,9 +77,12 @@ CREATE TABLE realtime.alerts (
     type                TEXT CHECK (type IN ('ESCALATE', 'RECOVERED', 'UNKNOWN')),
     dominant_pollutant  TEXT,
     event_time          TIMESTAMPTZ,
-    created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+    -- Outbox: alert cấp vùng chưa publish Kafka thành công sẽ được gửi lại ở batch sau
+    published_at        TIMESTAMPTZ
 );
 CREATE INDEX idx_alerts_borough_created_at ON realtime.alerts (borough, created_at DESC);
+CREATE INDEX idx_alerts_unpublished ON realtime.alerts (created_at) WHERE scope = 'region' AND published_at IS NULL;
 
 -- AQI theo giờ và borough (continuous aggregate, JOIN bảng thường cần TimescaleDB >= 2.10)
 CREATE MATERIALIZED VIEW realtime.aqi_hourly_by_borough
