@@ -27,9 +27,9 @@ down:
 reset:
 	docker compose down -v
 
-# Unit test thuần Python (không cần Spark/Java)
+# Unit test trên host; test cần pyspark/airflow tự skip nếu thiếu
 test:
-	python -m pytest -q tests/test_aqi.py tests/test_alert_rules.py tests/test_poller.py tests/test_notifier.py tests/test_mapreduce.py
+	python -m pytest -q tests
 
 # Toàn bộ test, chạy trong container Spark (có Java + pyspark)
 test-spark:
