@@ -1,112 +1,141 @@
--- Kích hoạt PostGIS
+-- Database aq: schema realtime (Streaming query B) và analytics (batch).
+-- Chạy tự động bởi image timescale/timescaledb-ha khi khởi tạo volume lần đầu.
+
+CREATE EXTENSION IF NOT EXISTS timescaledb;
 CREATE EXTENSION IF NOT EXISTS postgis;
 
--- Tạo các schema
 CREATE SCHEMA IF NOT EXISTS realtime;
 CREATE SCHEMA IF NOT EXISTS analytics;
 
+-- ============================================================
 -- 1. Schema realtime
+-- ============================================================
+
+-- Upsert mỗi lần Streaming làm mới metadata
 CREATE TABLE realtime.stations (
     location_id INT PRIMARY KEY,
-    name TEXT,
-    lat DOUBLE PRECISION,
-    lon DOUBLE PRECISION,
-    geom GEOGRAPHY(Point),
-    borough TEXT,
-    updated_at TIMESTAMPTZ
+    name        TEXT,
+    lat         DOUBLE PRECISION,
+    lon         DOUBLE PRECISION,
+    geom        GEOGRAPHY(Point, 4326),
+    borough     TEXT,
+    updated_at  TIMESTAMPTZ
 );
 
 CREATE TABLE realtime.readings (
     location_id INT,
-    sensor_id INT,
-    parameter TEXT,
-    value DOUBLE PRECISION,
-    units TEXT,
+    sensor_id   INT NOT NULL,
+    parameter   TEXT,
+    value       DOUBLE PRECISION,
+    units       TEXT,
     aqi_instant INT,
-    event_time TIMESTAMPTZ NOT NULL,
+    event_time  TIMESTAMPTZ NOT NULL,
     ingested_at TIMESTAMPTZ,
     PRIMARY KEY (sensor_id, event_time)
 );
--- Chuyển thành hypertable của TimescaleDB
 SELECT create_hypertable('realtime.readings', 'event_time');
+SELECT add_retention_policy('realtime.readings', INTERVAL '30 days');
 
+-- State của luật cảnh báo cấp trạm.
+-- alerted_level / candidate_level: 0..5 theo EPA, -1 = UNKNOWN (mất dữ liệu, luật 7)
 CREATE TABLE realtime.station_status (
-    location_id INT PRIMARY KEY,
-    station_aqi INT,
+    location_id        INT PRIMARY KEY,
+    station_aqi        INT,
     dominant_pollutant TEXT,
-    alerted_level INT,
-    candidate_level INT,
-    candidate_count INT,
-    last_event_time TIMESTAMPTZ,
-    last_alert_at TIMESTAMPTZ,
-    updated_at TIMESTAMPTZ
+    alerted_level      INT NOT NULL DEFAULT 0,
+    candidate_level    INT,
+    candidate_count    INT NOT NULL DEFAULT 0,
+    last_event_time    TIMESTAMPTZ,
+    last_alert_at      TIMESTAMPTZ,
+    updated_at         TIMESTAMPTZ
 );
 
+-- State của luật cảnh báo cấp vùng (5 borough)
 CREATE TABLE realtime.region_status (
-    borough TEXT PRIMARY KEY,
-    region_level INT,
+    borough             TEXT PRIMARY KEY,
+    region_level        INT NOT NULL DEFAULT 0,
     trigger_location_id INT,
-    candidate_level INT,
-    candidate_count INT,
-    last_event_time TIMESTAMPTZ,
-    last_alert_at TIMESTAMPTZ
+    candidate_level     INT,
+    candidate_count     INT NOT NULL DEFAULT 0,
+    last_event_time     TIMESTAMPTZ,
+    last_alert_at       TIMESTAMPTZ
 );
+INSERT INTO realtime.region_status (borough) VALUES
+    ('Manhattan'), ('Brooklyn'), ('Queens'), ('Bronx'), ('Staten Island');
 
 CREATE TABLE realtime.alerts (
-    alert_id TEXT PRIMARY KEY,
-    scope TEXT,
-    borough TEXT,
+    alert_id            TEXT PRIMARY KEY,
+    scope               TEXT NOT NULL CHECK (scope IN ('station', 'region')),
+    borough             TEXT,
     trigger_location_id INT,
-    aqi INT,
-    level TEXT,
-    prev_level TEXT,
-    type TEXT,
-    dominant_pollutant TEXT,
-    event_time TIMESTAMPTZ,
-    created_at TIMESTAMPTZ
+    aqi                 INT,
+    level               TEXT,
+    prev_level          TEXT,
+    type                TEXT CHECK (type IN ('ESCALATE', 'RECOVERED', 'UNKNOWN')),
+    dominant_pollutant  TEXT,
+    event_time          TIMESTAMPTZ,
+    created_at          TIMESTAMPTZ NOT NULL DEFAULT now()
 );
-CREATE INDEX idx_alerts_borough_created_at ON realtime.alerts(borough, created_at DESC);
+CREATE INDEX idx_alerts_borough_created_at ON realtime.alerts (borough, created_at DESC);
 
--- Continuous aggregate cho AQI trung bình theo giờ
+-- AQI theo giờ và borough (continuous aggregate, JOIN bảng thường cần TimescaleDB >= 2.10)
 CREATE MATERIALIZED VIEW realtime.aqi_hourly_by_borough
 WITH (timescaledb.continuous) AS
-SELECT 
+SELECT
     s.borough,
-    time_bucket('1 hour', r.event_time) AS bucket,
+    time_bucket(INTERVAL '1 hour', r.event_time) AS bucket,
     MAX(r.aqi_instant) AS aqi_max,
     AVG(r.aqi_instant) AS aqi_avg,
-    COUNT(*) AS n_readings
+    COUNT(*)           AS n_readings
 FROM realtime.readings r
 JOIN realtime.stations s ON r.location_id = s.location_id
-GROUP BY s.borough, time_bucket('1 hour', r.event_time)
+GROUP BY s.borough, time_bucket(INTERVAL '1 hour', r.event_time)
 WITH NO DATA;
 
--- 2. Schema analytics
+SELECT add_continuous_aggregate_policy('realtime.aqi_hourly_by_borough',
+    start_offset      => INTERVAL '3 days',
+    end_offset        => INTERVAL '1 hour',
+    schedule_interval => INTERVAL '15 minutes');
+
+-- ============================================================
+-- 2. Schema analytics (ghi bởi jobs/batch/analytics.py qua JDBC, mode overwrite + truncate)
+-- ============================================================
+
 CREATE TABLE analytics.daily_summary (
-    location_id INT,
-    date_local DATE,
-    aqi_daily INT,
+    location_id        INT,
+    date_local         DATE,
+    borough            TEXT,
+    aqi_daily          INT,
     dominant_pollutant TEXT,
-    level TEXT,
-    cluster INT,
-    cluster_name TEXT,
+    level              TEXT,
+    cluster            INT,
+    cluster_name       TEXT,
     PRIMARY KEY (location_id, date_local)
 );
 
+-- period_type ∈ {year, season, month}; period ví dụ '2025', '2025-summer', '2025-07'
 CREATE TABLE analytics.region_stats (
-    borough TEXT,
-    period_type TEXT,
-    period TEXT,
-    aqi_avg DOUBLE PRECISION,
-    days_over_100 INT,
+    borough              TEXT,
+    period_type          TEXT,
+    period               TEXT,
+    n_station_days       INT,
+    aqi_avg              DOUBLE PRECISION,
+    aqi_max              INT,
+    days_over_100        INT,
+    cluster_distribution TEXT,  -- JSON {"cluster_name": share}
     PRIMARY KEY (borough, period_type, period)
 );
 
+-- Tâm cụm ở thang gốc
 CREATE TABLE analytics.cluster_profiles (
-    cluster INT PRIMARY KEY,
-    cluster_name TEXT,
-    description TEXT,
-    share_of_days DOUBLE PRECISION,
-    pm25_mean DOUBLE PRECISION,
-    o3_mean DOUBLE PRECISION
+    cluster        INT PRIMARY KEY,
+    cluster_name   TEXT,
+    description    TEXT,
+    share_of_days  DOUBLE PRECISION,
+    n_days         INT,
+    aqi_mean       DOUBLE PRECISION,
+    aqi_max        DOUBLE PRECISION,
+    hours_over_100 DOUBLE PRECISION,
+    peak_hour      DOUBLE PRECISION,
+    pm25_o3_ratio  DOUBLE PRECISION
 );
