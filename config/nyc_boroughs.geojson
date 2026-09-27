@@ -1,0 +1,15 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {"boro_name": "Manhattan"},
+      "geometry": {"type": "Polygon", "coordinates": [[[-74.05, 40.69], [-74.05, 40.88], [-73.9, 40.88], [-73.9, 40.69], [-74.05, 40.69]]]}
+    },
+    {
+      "type": "Feature",
+      "properties": {"boro_name": "Queens"},
+      "geometry": {"type": "Polygon", "coordinates": [[[-73.9, 40.5], [-73.9, 40.8], [-73.7, 40.8], [-73.7, 40.5], [-73.9, 40.5]]]}
+    }
+  ]
+}

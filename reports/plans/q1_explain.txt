@@ -1,0 +1,34 @@
+== Physical Plan ==
+AdaptiveSparkPlan isFinalPlan=false
++- Sort [bad_days#140L DESC NULLS LAST], true, 0
+   +- Exchange rangepartitioning(bad_days#140L DESC NULLS LAST, 200), ENSURE_REQUIREMENTS, [plan_id=208]
+      +- HashAggregate(keys=[borough#24, _groupingexpression#150], functions=[count(date_local#11)])
+         +- Exchange hashpartitioning(borough#24, _groupingexpression#150, 200), ENSURE_REQUIREMENTS, [plan_id=205]
+            +- HashAggregate(keys=[borough#24, _groupingexpression#150], functions=[partial_count(date_local#11)])
+               +- Project [date_local#11, borough#24, year(date_local#11) AS _groupingexpression#150]
+                  +- BroadcastHashJoin [location_id#10], [location_id#20], Inner, BuildRight, false
+                     :- Project [location_id#10, date_local#11]
+                     :  +- BroadcastHashJoin [cast(cluster#117 as bigint)], [cluster#121L], LeftOuter, BuildRight, false
+                     :     :- Project [location_id#10, date_local#11, cluster#117]
+                     :     :  +- BroadcastHashJoin [location_id#10, date_local#11], [location_id#0, date_local#1], LeftOuter, BuildRight, false
+                     :     :     :- Project [location_id#10, date_local#11]
+                     :     :     :  +- Filter ((isnotnull(aqi_daily#12) AND (aqi_daily#12 > 100)) AND isnotnull(location_id#10))
+                     :     :     :     +- FileScan parquet [location_id#10,aqi_daily#12,date_local#11] Batched: true, DataFilters: [isnotnull(aqi_daily#12), (aqi_daily#12 > 100), isnotnull(location_id#10)], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3a://aq-lake/gold/fact_daily_aqi], PartitionFilters: [], PushedFilters: [IsNotNull(aqi_daily), GreaterThan(aqi_daily,100), IsNotNull(location_id)], ReadSchema: struct<location_id:int,aqi_daily:int>
+                     :     :     +- BroadcastExchange HashedRelationBroadcastMode(List(input[0, int, true], input[1, date, true]),false), [plan_id=192]
+                     :     :        +- Project [location_id#0, date_local#1, 0 AS cluster#117]
+                     :     :           +- Filter isnotnull(location_id#0)
+                     :     :              +- FileScan parquet [location_id#0,date_local#1] Batched: true, DataFilters: [isnotnull(location_id#0)], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3a://aq-lake/gold/cluster_features], PartitionFilters: [isnotnull(date_local#1), dynamicpruningexpression(date_local#1 IN dynamicpruning#151)], PushedFilters: [IsNotNull(location_id)], ReadSchema: struct<location_id:int>
+                     :     :                    +- SubqueryAdaptiveBroadcast dynamicpruning#151, 1, true, Project [location_id#10, date_local#11], [location_id#10, date_local#11]
+                     :     :                       +- AdaptiveSparkPlan isFinalPlan=false
+                     :     :                          +- Project [location_id#10, date_local#11]
+                     :     :                             +- Filter ((isnotnull(aqi_daily#12) AND (aqi_daily#12 > 100)) AND isnotnull(location_id#10))
+                     :     :                                +- FileScan parquet [location_id#10,aqi_daily#12,date_local#11] Batched: true, DataFilters: [isnotnull(aqi_daily#12), (aqi_daily#12 > 100), isnotnull(location_id#10)], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3a://aq-lake/gold/fact_daily_aqi], PartitionFilters: [], PushedFilters: [IsNotNull(aqi_daily), GreaterThan(aqi_daily,100), IsNotNull(location_id)], ReadSchema: struct<location_id:int,aqi_daily:int>
+                     :     +- BroadcastExchange HashedRelationBroadcastMode(List(input[0, bigint, true]),false), [plan_id=196]
+                     :        +- Project [cluster#121L]
+                     :           +- Filter isnotnull(cluster#121L)
+                     :              +- Scan ExistingRDD[cluster#121L,cluster_name#122]
+                     +- BroadcastExchange HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=200]
+                        +- Project [location_id#20, borough#24]
+                           +- Filter isnotnull(location_id#20)
+                              +- FileScan parquet [location_id#20,borough#24,date_local#26] Batched: true, DataFilters: [isnotnull(location_id#20)], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3a://aq-lake/gold/dim_station], PartitionFilters: [], PushedFilters: [IsNotNull(location_id)], ReadSchema: struct<location_id:int,borough:string>
+

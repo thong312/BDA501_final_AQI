@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Progress Review: Team Presentation 2</title>
+    <!-- Reveal.js core CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
+    <!-- Theme (Black modern feel) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/black.min.css">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        .reveal .slides section {
+            text-align: left;
+            padding: 10px;
+        }
+        .reveal h1, .reveal h2, .reveal h3 {
+            color: #00d2ff;
+            text-transform: none;
+            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+        }
+        .reveal h1 { font-size: 2.2em; text-align: center; }
+        .reveal h2 { font-size: 1.6em; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;}
+        .reveal p, .reveal li { font-size: 0.8em; line-height: 1.5; color: #e0e0e0; }
+        .highlight { color: #f39c12; font-weight: bold; }
+        
+        .box { 
+            background: rgba(20, 20, 20, 0.8); 
+            border: 1px solid #333; 
+            padding: 20px; 
+            border-radius: 8px; 
+            box-shadow: inset 0 0 20px rgba(0,0,0,1);
+        }
+        .metric-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        .metric {
+            text-align: center;
+            background: #111;
+            border: 1px solid #444;
+            padding: 15px;
+            border-radius: 10px;
+            width: 25%;
+        }
+        .metric h4 { color: #888; font-size: 0.6em; margin: 0; text-transform: uppercase;}
+        .metric span { font-size: 1.5em; font-weight: bold; color: #00d2ff; }
+        
+        .code-block { 
+            background: #000; 
+            padding: 15px; 
+            border-radius: 5px; 
+            border-left: 3px solid #00d2ff;
+            font-family: 'Courier New', Courier, monospace; 
+            font-size: 0.65em; 
+            color: #2ecc71; 
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.5em; font-weight: bold; vertical-align: middle; margin-left: 10px;}
+        .status-done { background: #27ae60; color: #fff; }
+        .status-wip { background: #d35400; color: #fff; }
+        
+        /* Pipeline Animation */
+        .pipeline {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #111;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 30px 0;
+            border: 1px solid #333;
+        }
+        .node {
+            text-align: center;
+            width: 80px;
+            z-index: 2;
+        }
+        .node i {
+            font-size: 2em;
+            color: #bdc3c7;
+            background: #222;
+            padding: 15px;
+            border-radius: 50%;
+            border: 2px solid #555;
+            transition: all 0.3s;
+        }
+        .node p {
+            margin-top: 10px;
+            font-size: 0.5em;
+            color: #fff;
+            font-weight: bold;
+            text-align: center;
+        }
+        .node.active i {
+            color: #00d2ff;
+            border-color: #00d2ff;
+            box-shadow: 0 0 15px #00d2ff;
+        }
+        
+        .edge {
+            flex-grow: 1;
+            height: 4px;
+            background: #333;
+            margin: 0 -10px 30px -10px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Particle animation moving along the edge */
+        .particle {
+            position: absolute;
+            top: -3px;
+            left: 0;
+            width: 10px;
+            height: 10px;
+            background: #00d2ff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #00d2ff;
+            animation: flow 2s infinite linear;
+        }
+        .particle.p2 { animation-delay: 0.6s; background: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
+        .particle.p3 { animation-delay: 1.2s; background: #f1c40f; box-shadow: 0 0 10px #f1c40f; }
+
+        @keyframes flow {
+            0% { left: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { left: 100%; opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="reveal">
+        <div class="slides">
+
+            <!-- Slide 1: Title -->
+            <section style="text-align: center; padding-top: 5%;">
+                <h1>NYC Air Quality System</h1>
+                <h3 style="color: #f39c12;">Team Presentation 2: Progress & Evidence</h3>
+                <p>Real-time Kafka Streams, Spark Data Lake (S3), and Machine Learning</p>
+                
+                <!-- Animated Pipeline -->
+                <div class="pipeline">
+                    <div class="node active">
+                        <i class="fa-solid fa-cloud-arrow-down"></i>
+                        <p>OpenAQ API</p>
+                    </div>
+                    <div class="edge"><div class="particle"></div></div>
+                    <div class="node active">
+                        <i class="fa-solid fa-database"></i>
+                        <p>Kafka</p>
+                    </div>
+                    <div class="edge"><div class="particle p2"></div></div>
+                    <div class="node active">
+                        <i class="fa-solid fa-bolt"></i>
+                        <p>Spark ETL</p>
+                    </div>
+                    <div class="edge"><div class="particle p3"></div></div>
+                    <div class="node active">
+                        <i class="fa-solid fa-bucket"></i>
+                        <p>S3 (LocalStack)</p>
+                    </div>
+                    <div class="edge"><div class="particle"></div></div>
+                    <div class="node active">
+                        <i class="fa-solid fa-server"></i>
+                        <p>PostgreSQL</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 2: Ingestion -->
+            <section>
+                <h2>1. Working Data Ingestion <span class="status-badge status-done">IMPLEMENTED</span></h2>
+                <div class="box">
+                    <p>Luồng Ingestion bằng Python <code>poller</code> gọi API OpenAQ định kỳ, bóc tách cấu trúc và đẩy vào Kafka Broker.</p>
+                    
+                    <div class="metric-container">
+                        <div class="metric"><h4>Kafka Topics</h4><span>5</span></div>
+                        <div class="metric"><h4>Msg/Poll</h4><span>243</span></div>
+                        <div class="metric"><h4>Fail Rate</h4><span>0%</span></div>
+                    </div>
+                    
+                    <p><span class="highlight">Log Thực Tế (Docker):</span></p>
+                    <div class="code-block">
+2026-09-26 17:00:03,380 - INFO - Starting Poller Service...
+2026-09-26 17:00:08,405 - INFO - Published metadata for 74 locations.
+2026-09-26 17:01:05,244 - INFO - Measurement poll complete: ok=243, failed=0, ratio=0.00
+2026-09-26 17:12:02,033 - INFO - Measurement poll complete: ok=227, failed=0, ratio=0.00
+2026-09-26 17:23:04,044 - INFO - Measurement poll complete: ok=232, failed=0, ratio=0.00
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 3: Spark Data Processing -->
+            <section>
+                <h2>2. Spark Data Lake Pipeline <span class="status-badge status-done">IMPLEMENTED</span></h2>
+                <div class="box">
+                    <p>Hệ thống chia làm 3 tầng dữ liệu trên <strong>S3 (LocalStack)</strong>. Batch Script đã chạy thành công qua M7 (Bronze->Silver) và M9 (Silver->Gold).</p>
+                    
+                    <div class="metric-container">
+                        <div class="metric"><h4>Data Objects</h4><span>54 Files</span></div>
+                        <div class="metric"><h4>Total Size</h4><span>128 KB (Test)</span></div>
+                        <div class="metric"><h4>Format</h4><span>Parquet + Snappy</span></div>
+                    </div>
+                    
+                    <p><span class="highlight">Cấu trúc thư mục thực tế trên S3 Bucket (aq-lake):</span></p>
+                    <div class="code-block">
+2026-09-26 17:18:42        533 bronze/openaq/measurements/ingest_date=2026-09-26/...json.gz
+2026-09-26 17:25:47       6094 silver/measurements/year=2026/month=9/...snappy.parquet
+2026-09-26 17:26:30       2224 gold/fact_hourly/date_local=2026-09-26/...snappy.parquet
+2026-09-26 17:26:39       1504 gold/fact_daily_aqi/date_local=2026-09-26/...snappy.parquet
+2026-09-26 17:26:51       1501 gold/cluster_features/date_local=2026-09-26/...snappy.parquet
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 4: ML & NoSQL -->
+            <section>
+                <h2>3. Analytics, ML & Delivery <span class="status-badge status-done">IMPLEMENTED</span></h2>
+                <div class="box">
+                    <p>Spark SQL (M10) phân tích các trạm, chạy KMeans Clustering, sau đó ghi trực tiếp vào Lược đồ <code>analytics</code> của PostgreSQL DB.</p>
+                    <ul>
+                        <li><strong>Spark MLlib:</strong> Trích xuất Vector Feature (Mean AQI, Hours > 100).</li>
+                        <li><strong>Fallback Logic:</strong> KMeans sập khi <code>points < K</code>. Đã được fix bằng lớp bảo vệ tự động tạo Dummy Model khi dữ liệu mồi quá thưa.</li>
+                        <li><strong>Postgres Warehouse:</strong> Dữ liệu ghi qua JDBC driver thành công vào các bảng như <code>daily_summary</code>, <code>region_stats</code>.</li>
+                    </ul>
+                    <div class="code-block">
+2026-09-26 17:27:19 - INFO - Khởi chạy KMeans Clustering... (K=2..7)
+2026-09-26 17:27:21 - WARNING - Chỉ có 1 dòng, không thể chuẩn hoá KMeans. Tạo dữ liệu giả.
+2026-09-26 17:36:20 - INFO - Đang ghi vào PostgreSQL Schema Analytics...
+2026-09-26 17:36:25 - INFO - Đã ghi xong Analytics Dashboard!
+                    </div>
+                </div>
+            </section>
+
+            <!-- Slide 5: Known Issues -->
+            <section>
+                <h2>4. Technical Risks & Resolution</h2>
+                <div class="box">
+                    <ul>
+                        <li><span class="highlight">Lỗi Data Quality (M7):</span> Dữ liệu bị cờ là STALE do timestamp giả lập (ingested_at - datetime_utc > 3 giờ).<br>
+                        <em>Fix:</em> Đồng bộ lại rule trong <code>backfill_archive.py</code> để bypass luồng nạp mồi.</li>
+                        <li><span class="highlight">Lỗi KMeans Out of Bounds (M10):</span> Model cố gắng nhóm 1 dòng dữ liệu thành 2-7 cụm.<br>
+                        <em>Fix:</em> Thêm giới hạn <code>max_k = min(7, count)</code> và Logic dự phòng Bypass mô hình khi không đủ tập mẫu phân tích.</li>
+                        <li><span class="highlight">Lỗi Missing Dependency Postgres (M10):</span> Driver org.postgresql không có sẵn trên Spark Worker.<br>
+                        <em>Fix:</em> Inject package <code>org.postgresql:postgresql:42.7.2</code> thông qua <code>--packages</code> lúc spark-submit.</li>
+                    </ul>
+                </div>
+            </section>
+            
+            <!-- Slide 6: Next Steps -->
+            <section>
+                <h2>5. Plan for Demo (Session 10) <span class="status-badge status-wip">PENDING</span></h2>
+                <div class="box">
+                    <ul>
+                        <li><strong>Thử tải lượng lớn:</strong> Thu thập Real-time 7 ngày (thay vì dữ liệu giả lập 24h).</li>
+                        <li><strong>Hoàn thiện M8 (MapReduce):</strong> Hoàn thành mã nguồn phân tích MapReduce và đối soát kết quả với bảng Gold của Spark.</li>
+                        <li><strong>BI Dashboard:</strong> Khởi tạo Metabase đọc dữ liệu từ Postgres <code>analytics.*</code> schema.</li>
+                    </ul>
+                    <p style="text-align: center; margin-top: 30px; font-size: 1.2em; color: #f39c12;">Ready for Final Presentation!</p>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Reveal.js Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+    <script>
+        Reveal.initialize({
+            hash: true,
+            transition: 'slide',
+            controls: true,
+            progress: true,
+            center: true,
+            backgroundTransition: 'fade'
+        });
+    </script>
+</body>
+</html>

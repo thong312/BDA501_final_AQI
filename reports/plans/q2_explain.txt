@@ -1,0 +1,27 @@
+== Physical Plan ==
+AdaptiveSparkPlan isFinalPlan=false
++- Filter (usg_stations#145L >= 2)
+   +- HashAggregate(keys=[date_local#11], functions=[count(location_id#10)])
+      +- Exchange hashpartitioning(date_local#11, 200), ENSURE_REQUIREMENTS, [plan_id=290]
+         +- HashAggregate(keys=[date_local#11], functions=[partial_count(location_id#10)])
+            +- Project [location_id#10, date_local#11]
+               +- BroadcastHashJoin [cast(cluster#117 as bigint)], [cluster#121L], LeftOuter, BuildRight, false
+                  :- Project [location_id#10, date_local#11, cluster#117]
+                  :  +- BroadcastHashJoin [location_id#10, date_local#11], [location_id#0, date_local#1], LeftOuter, BuildRight, false
+                  :     :- Project [location_id#10, date_local#11]
+                  :     :  +- Filter level#14 IN (USG,Unhealthy,Very Unhealthy,Hazardous)
+                  :     :     +- FileScan parquet [location_id#10,level#14,date_local#11] Batched: true, DataFilters: [level#14 IN (USG,Unhealthy,Very Unhealthy,Hazardous)], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3a://aq-lake/gold/fact_daily_aqi], PartitionFilters: [], PushedFilters: [In(level, [Hazardous,USG,Unhealthy,Very Unhealthy])], ReadSchema: struct<location_id:int,level:string>
+                  :     +- BroadcastExchange HashedRelationBroadcastMode(List(input[0, int, true], input[1, date, true]),false), [plan_id=281]
+                  :        +- Project [location_id#0, date_local#1, 0 AS cluster#117]
+                  :           +- Filter isnotnull(location_id#0)
+                  :              +- FileScan parquet [location_id#0,date_local#1] Batched: true, DataFilters: [isnotnull(location_id#0)], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3a://aq-lake/gold/cluster_features], PartitionFilters: [isnotnull(date_local#1), dynamicpruningexpression(date_local#1 IN dynamicpruning#154)], PushedFilters: [IsNotNull(location_id)], ReadSchema: struct<location_id:int>
+                  :                    +- SubqueryAdaptiveBroadcast dynamicpruning#154, 1, true, Project [location_id#10, date_local#11], [location_id#10, date_local#11]
+                  :                       +- AdaptiveSparkPlan isFinalPlan=false
+                  :                          +- Project [location_id#10, date_local#11]
+                  :                             +- Filter level#14 IN (USG,Unhealthy,Very Unhealthy,Hazardous)
+                  :                                +- FileScan parquet [location_id#10,level#14,date_local#11] Batched: true, DataFilters: [level#14 IN (USG,Unhealthy,Very Unhealthy,Hazardous)], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3a://aq-lake/gold/fact_daily_aqi], PartitionFilters: [], PushedFilters: [In(level, [Hazardous,USG,Unhealthy,Very Unhealthy])], ReadSchema: struct<location_id:int,level:string>
+                  +- BroadcastExchange HashedRelationBroadcastMode(List(input[0, bigint, true]),false), [plan_id=285]
+                     +- Project [cluster#121L]
+                        +- Filter isnotnull(cluster#121L)
+                           +- Scan ExistingRDD[cluster#121L,cluster_name#122]
+

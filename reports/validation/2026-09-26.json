@@ -1,0 +1,10 @@
+{
+  "date": "2026-09-26",
+  "total_keys": 1,
+  "matched_keys": 1,
+  "spark_only": 0,
+  "mr_only": 0,
+  "max_diff_avg": 0.0,
+  "max_diff_max": 0.0,
+  "status": "PASS"
+}
