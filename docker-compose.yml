@@ -1,11 +1,11 @@
-x-spark-common: &spark-common
+﻿x-spark-common: &spark-common
   build:
     context: .
     dockerfile: docker/spark/Dockerfile
   image: aq-spark:3.5.3
   environment: &spark-env
     SPARK_NO_DAEMONIZE: "true"
-    # /opt/aq: code dự án; pyspark + py4j để chạy pytest/python3 trực tiếp (spark-submit tự thêm)
+    # /opt/aq: code dá»± Ã¡n; pyspark + py4j Ä‘á»ƒ cháº¡y pytest/python3 trá»±c tiáº¿p (spark-submit tá»± thÃªm)
     PYTHONPATH: /opt/aq:/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.7-src.zip
     KAFKA_BOOTSTRAP: kafka:9092
     S3_ENDPOINT: http://minio:9000
@@ -29,7 +29,7 @@ services:
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      # PLAINTEXT cho các container trong mạng compose, PLAINTEXT_HOST cho máy host (test, chạy tay)
+      # PLAINTEXT cho cÃ¡c container trong máº¡ng compose, PLAINTEXT_HOST cho mÃ¡y host (test, cháº¡y tay)
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
@@ -79,7 +79,7 @@ services:
     environment:
       <<: *spark-env
       SPARK_MASTER_HOST: spark-master
-      # Mỗi app mặc định tối đa 2/4 core để streaming và batch chạy song song được
+      # Má»—i app máº·c Ä‘á»‹nh tá»‘i Ä‘a 2/4 core Ä‘á»ƒ streaming vÃ  batch cháº¡y song song Ä‘Æ°á»£c
       SPARK_MASTER_OPTS: "-Dspark.deploy.defaultCores=2"
 
   spark-worker-1:
@@ -104,8 +104,8 @@ services:
       SPARK_WORKER_MEMORY: 2G
       SPARK_WORKER_CORES: "2"
 
-  # Docker Hub/quay.io không còn phát hành image MinIO chính thức; dùng bản Bitnami lưu trữ (ghim phiên bản).
-  # MINIO_DEFAULT_BUCKETS tạo sẵn bucket khi khởi động.
+  # Docker Hub/quay.io khÃ´ng cÃ²n phÃ¡t hÃ nh image MinIO chÃ­nh thá»©c; dÃ¹ng báº£n Bitnami lÆ°u trá»¯ (ghim phiÃªn báº£n).
+  # MINIO_DEFAULT_BUCKETS táº¡o sáºµn bucket khi khá»Ÿi Ä‘á»™ng.
   minio:
     image: bitnamilegacy/minio:2024.6.13
     container_name: minio
@@ -160,6 +160,21 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
 
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: services/dashboard/Dockerfile
+    container_name: dashboard
+    ports:
+      - "5050:5050"
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    environment:
+      PG_DSN: postgresql://${PG_USER:-aq_user}:${PG_PASSWORD:-aq_password}@postgres:5432/${PG_DB:-aq}
+
 volumes:
   minio-data:
   pg-data:
+

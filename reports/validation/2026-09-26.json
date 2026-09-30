@@ -1,0 +1,18 @@
+{
+  "date": "2026-09-26",
+  "total_keys": 2,
+  "matched_keys": 2,
+  "spark_only": 0,
+  "mr_only": 0,
+  "value_mismatches": 0,
+  "max_abs_diff": {
+    "count": 0.0,
+    "sum": 0.0,
+    "max": 0.0,
+    "avg": 0.0,
+    "hours_over_threshold": 0.0
+  },
+  "sample_mismatches": [],
+  "sample_one_sided": [],
+  "status": "PASS"
+}

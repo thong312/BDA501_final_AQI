@@ -1,0 +1,713 @@
+== Physical Plan ==
+AdaptiveSparkPlan (95)
++- HashAggregate (94)
+   +- Exchange (93)
+      +- HashAggregate (92)
+         +- HashAggregate (91)
+            +- Exchange (90)
+               +- HashAggregate (89)
+                  +- Project (88)
+                     +- BroadcastHashJoin Inner BuildRight (87)
+                        :- Filter (81)
+                        :  +- InMemoryTableScan (1)
+                        :        +- InMemoryRelation (2)
+                        :              +- AdaptiveSparkPlan (80)
+                                          +- == Final Plan ==
+                                             * Project (55)
+                                             +- ArrowEvalPython (54)
+                                                +- SortAggregate (53)
+                                                   +- * Sort (52)
+                                                      +- ShuffleQueryStage (51), Statistics(sizeInBytes=738.9 KiB, rowCount=1.35E+4)
+                                                         +- Exchange (50)
+                                                            +- SortAggregate (49)
+                                                               +- * Sort (48)
+                                                                  +- * Project (47)
+                                                                     +- ArrowEvalPython (46)
+                                                                        +- * Project (45)
+                                                                           +- * Filter (44)
+                                                                              +- ArrowEvalPython (43)
+                                                                                 +- SortAggregate (42)
+                                                                                    +- SortAggregate (41)
+                                                                                       +- * Sort (40)
+                                                                                          +- * Project (39)
+                                                                                             +- * Filter (38)
+                                                                                                +- Window (37)
+                                                                                                   +- * Sort (36)
+                                                                                                      +- * Project (35)
+                                                                                                         +- Window (34)
+                                                                                                            +- * Sort (33)
+                                                                                                               +- AQEShuffleRead (32)
+                                                                                                                  +- ShuffleQueryStage (31), Statistics(sizeInBytes=78.2 MiB, rowCount=9.86E+5)
+                                                                                                                     +- Exchange (30)
+                                                                                                                        +- * Project (29)
+                                                                                                                           +- TableCacheQueryStage (28), Statistics(sizeInBytes=56.1 MiB, rowCount=9.86E+5)
+                                                                                                                              +- InMemoryTableScan (3)
+                                                                                                                                    +- InMemoryRelation (4)
+                                                                                                                                          +- AdaptiveSparkPlan (27)
+                                                                                                +- == Final Plan ==
+                                                                                                   * Project (18)
+                                                                                                   +- ArrowEvalPython (17)
+                                                                                                      +- SortAggregate (16)
+                                                                                                         +- * Sort (15)
+                                                                                                            +- ShuffleQueryStage (14), Statistics(sizeInBytes=85.7 MiB, rowCount=9.86E+5)
+                                                                                                               +- Exchange (13)
+                                                                                                                  +- SortAggregate (12)
+                                                                                                                     +- * Sort (11)
+                                                                                                                        +- * Project (10)
+                                                                                                                           +- TableCacheQueryStage (9), Statistics(sizeInBytes=199.8 MiB, rowCount=9.86E+5)
+                                                                                                                              +- InMemoryTableScan (5)
+                                                                                                                                    +- InMemoryRelation (6)
+                                                                                                                                          +- * ColumnarToRow (8)
+                                                                                                                                             +- Scan parquet  (7)
+                                                                                                +- == Initial Plan ==
+                                                                                                   Project (26)
+                                                                                                   +- ArrowEvalPython (25)
+                                                                                                      +- SortAggregate (24)
+                                                                                                         +- Sort (23)
+                                                                                                            +- Exchange (22)
+                                                                                                               +- SortAggregate (21)
+                                                                                                                  +- Sort (20)
+                                                                                                                     +- Project (19)
+                                                                                                                        +- InMemoryTableScan (5)
+                                                                                                                              +- InMemoryRelation (6)
+                                                                                                                                    +- * ColumnarToRow (8)
+                                                                                                                                       +- Scan parquet  (7)
+                                          +- == Initial Plan ==
+                                             Project (79)
+                                             +- ArrowEvalPython (78)
+                                                +- SortAggregate (77)
+                                                   +- Sort (76)
+                                                      +- Exchange (75)
+                                                         +- SortAggregate (74)
+                                                            +- Sort (73)
+                                                               +- Project (72)
+                                                                  +- ArrowEvalPython (71)
+                                                                     +- Project (70)
+                                                                        +- Filter (69)
+                                                                           +- ArrowEvalPython (68)
+                                                                              +- SortAggregate (67)
+                                                                                 +- SortAggregate (66)
+                                                                                    +- Sort (65)
+                                                                                       +- Project (64)
+                                                                                          +- Filter (63)
+                                                                                             +- Window (62)
+                                                                                                +- Sort (61)
+                                                                                                   +- Project (60)
+                                                                                                      +- Window (59)
+                                                                                                         +- Sort (58)
+                                                                                                            +- Exchange (57)
+                                                                                                               +- Project (56)
+                                                                                                                  +- InMemoryTableScan (3)
+                                                                                                                        +- InMemoryRelation (4)
+                                                                                                                              +- AdaptiveSparkPlan (27)
+                                                                                    +- == Final Plan ==
+                                                                                       * Project (18)
+                                                                                       +- ArrowEvalPython (17)
+                                                                                          +- SortAggregate (16)
+                                                                                             +- * Sort (15)
+                                                                                                +- ShuffleQueryStage (14), Statistics(sizeInBytes=85.7 MiB, rowCount=9.86E+5)
+                                                                                                   +- Exchange (13)
+                                                                                                      +- SortAggregate (12)
+                                                                                                         +- * Sort (11)
+                                                                                                            +- * Project (10)
+                                                                                                               +- TableCacheQueryStage (9), Statistics(sizeInBytes=199.8 MiB, rowCount=9.86E+5)
+                                                                                                                  +- InMemoryTableScan (5)
+                                                                                                                        +- InMemoryRelation (6)
+                                                                                                                              +- * ColumnarToRow (8)
+                                                                                                                                 +- Scan parquet  (7)
+                                                                                    +- == Initial Plan ==
+                                                                                       Project (26)
+                                                                                       +- ArrowEvalPython (25)
+                                                                                          +- SortAggregate (24)
+                                                                                             +- Sort (23)
+                                                                                                +- Exchange (22)
+                                                                                                   +- SortAggregate (21)
+                                                                                                      +- Sort (20)
+                                                                                                         +- Project (19)
+                                                                                                            +- InMemoryTableScan (5)
+                                                                                                                  +- InMemoryRelation (6)
+                                                                                                                        +- * ColumnarToRow (8)
+                                                                                                                           +- Scan parquet  (7)
+                        +- BroadcastExchange (86)
+                           +- Filter (85)
+                              +- InMemoryTableScan (82)
+                                    +- InMemoryRelation (83)
+                                          +- * Scan ExistingRDD (84)
+
+
+(1) InMemoryTableScan
+Output [3]: [location_id#1, date_local#1038, aqi_daily#1895]
+Arguments: [location_id#1, date_local#1038, aqi_daily#1895], [isnotnull(location_id#1)]
+
+(2) InMemoryRelation
+Arguments: [location_id#1, date_local#1038, dominant_pollutant#1893, aqi_daily#1895, level#1901], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@3b5fe2e1,StorageLevel(disk, memory, deserialized, 1 replicas),AdaptiveSparkPlan isFinalPlan=true
++- == Final Plan ==
+   *(8) Project [location_id#1, date_local#1038, dominant_pollutant#1893, aqi_daily#1895, pythonUDF0#2005 AS level#1901]
+   +- ArrowEvalPython [level_name_udf(aqi_daily#1895)#1900], [pythonUDF0#2005], 200
+      +- SortAggregate(key=[location_id#1, date_local#1038], functions=[max_by(parameter#3, param_aqi#1873), max(param_aqi#1873)], output=[location_id#1, date_local#1038, dominant_pollutant#1893, aqi_daily#1895])
+         +- *(7) Sort [location_id#1 ASC NULLS FIRST, date_local#1038 ASC NULLS FIRST], false, 0
+            +- ShuffleQueryStage 2
+               +- Exchange hashpartitioning(location_id#1, date_local#1038, 200), ENSURE_REQUIREMENTS, [plan_id=823]
+                  +- SortAggregate(key=[location_id#1, date_local#1038], functions=[partial_max_by(parameter#3, param_aqi#1873), partial_max(param_aqi#1873)], output=[location_id#1, date_local#1038, valueWithExtremumOrdering#2054, extremumOrdering#2055, max#2056])
+                     +- *(6) Sort [location_id#1 ASC NULLS FIRST, date_local#1038 ASC NULLS FIRST], false, 0
+                        +- *(6) Project [location_id#1, date_local#1038, parameter#3, CASE WHEN parameter#3 IN (pm25,pm10) THEN CASE WHEN (n_hours#1854L >= 18) THEN cast(pythonUDF0#2001 as int) END WHEN (parameter#3 = o3) THEN greatest(cast(pythonUDF1#2002 as int), cast(pythonUDF2#2003 as int)) WHEN (parameter#3 = co) THEN cast(pythonUDF1#2002 as int) WHEN parameter#3 IN (no2,so2) THEN cast(pythonUDF3#2004 as int) END AS param_aqi#1873]
+                           +- ArrowEvalPython [aqi_udf(parameter#3, avg_24h#1852, units#1860, 24h)#1869, aqi_udf(parameter#3, max_8h#1858, units#1860, 8h)#1870, aqi_udf(parameter#3, max_1h#1856, units#1860, 1h)#1871, aqi_udf(parameter#3, max_1h#1856, units#1860, instant)#1872], [pythonUDF0#2001, pythonUDF1#2002, pythonUDF2#2003, pythonUDF3#2004], 200
+                              +- *(5) Project [location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860]
+                                 +- *(5) Filter isnotnull(CASE WHEN parameter#3 IN (pm25,pm10) THEN CASE WHEN (n_hours#1854L >= 18) THEN cast(pythonUDF0#1997 as int) END WHEN (parameter#3 = o3) THEN greatest(cast(pythonUDF1#1998 as int), cast(pythonUDF2#1999 as int)) WHEN (parameter#3 = co) THEN cast(pythonUDF1#1998 as int) WHEN parameter#3 IN (no2,so2) THEN cast(pythonUDF3#2000 as int) END)
+                                    +- ArrowEvalPython [aqi_udf(parameter#3, avg_24h#1852, units#1860, 24h)#1869, aqi_udf(parameter#3, max_8h#1858, units#1860, 8h)#1870, aqi_udf(parameter#3, max_1h#1856, units#1860, 1h)#1871, aqi_udf(parameter#3, max_1h#1856, units#1860, instant)#1872], [pythonUDF0#1997, pythonUDF1#1998, pythonUDF2#1999, pythonUDF3#2000], 200
+                                       +- SortAggregate(key=[location_id#1, date_local#1038, parameter#3], functions=[avg(value_avg#1027), count(value_avg#1027), max(value_avg#1027), max(avg_8h#1828), first(units#1031, true)], output=[location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860])
+                                          +- SortAggregate(key=[location_id#1, date_local#1038, parameter#3], functions=[partial_avg(value_avg#1027), partial_count(value_avg#1027), partial_max(value_avg#1027), partial_max(avg_8h#1828), partial_first(units#1031, true)], output=[location_id#1, date_local#1038, parameter#3, sum#2064, count#2065L, count#2066L, max#2067, max#2068, first#2069, valueSet#2070])
+                                             +- *(4) Sort [location_id#1 ASC NULLS FIRST, date_local#1038 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST], false, 0
+                                                +- *(4) Project [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, CASE WHEN (n_8h#1815L >= 6) THEN avg_8h#1802 END AS avg_8h#1828]
+                                                   +- *(4) Filter (isnotnull(date_local#1038) AND ((date_local#1038 >= 2024-08-01) AND (date_local#1038 <= 2026-06-30)))
+                                                      +- Window [count(value_avg#1027) windowspecdefinition(location_id#1, parameter#3, _w0#1816L ASC NULLS FIRST, specifiedwindowframe(RangeFrame, -25200, currentrow$())) AS n_8h#1815L], [location_id#1, parameter#3], [_w0#1816L ASC NULLS FIRST]
+                                                         +- *(3) Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, _w0#1816L ASC NULLS FIRST], false, 0
+                                                            +- *(3) Project [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1802, cast(hour_utc#985 as bigint) AS _w0#1816L]
+                                                               +- Window [avg(value_avg#1027) windowspecdefinition(location_id#1, parameter#3, _w0#1803L ASC NULLS FIRST, specifiedwindowframe(RangeFrame, -25200, currentrow$())) AS avg_8h#1802], [location_id#1, parameter#3], [_w0#1803L ASC NULLS FIRST]
+                                                                  +- *(2) Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, _w0#1803L ASC NULLS FIRST], false, 0
+                                                                     +- AQEShuffleRead coalesced
+                                                                        +- ShuffleQueryStage 1
+                                                                           +- Exchange hashpartitioning(location_id#1, parameter#3, 200), ENSURE_REQUIREMENTS, [plan_id=639]
+                                                                              +- *(1) Project [location_id#1, parameter#3, hour_utc#985, value_avg#1027, units#1031, date_local#1038, cast(hour_utc#985 as bigint) AS _w0#1803L]
+                                                                                 +- TableCacheQueryStage 0
+                                                                                    +- InMemoryTableScan [date_local#1038, hour_utc#985, location_id#1, parameter#3, units#1031, value_avg#1027]
+                                                                                          +- InMemoryRelation [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, aqi_hourly#1056], StorageLevel(disk, memory, deserialized, 1 replicas)
+                                                                                                +- AdaptiveSparkPlan isFinalPlan=true
+                                                                                                +- == Final Plan ==
+                                                                                                   *(3) Project [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, cast(pythonUDF0#1256 as int) AS aqi_hourly#1056]
+                                                                                                   +- ArrowEvalPython [aqi_udf(parameter#3, value_avg#1027, units#1031, instant)#1055], [pythonUDF0#1256], 200
+                                                                                                      +- SortAggregate(key=[location_id#1, parameter#3, hour_utc#985], functions=[avg(value#5), count(value#5), first(units#4, true)], output=[location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046])
+                                                                                                         +- *(2) Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+                                                                                                            +- ShuffleQueryStage 1
+                                                                                                               +- Exchange hashpartitioning(location_id#1, parameter#3, hour_utc#985, 200), ENSURE_REQUIREMENTS, [plan_id=294]
+                                                                                                                  +- SortAggregate(key=[location_id#1, parameter#3, hour_utc#985], functions=[partial_avg(value#5), partial_count(value#5), partial_first(units#4, true)], output=[location_id#1, parameter#3, hour_utc#985, sum#1357, count#1358L, count#1359L, first#1360, valueSet#1361])
+                                                                                                                     +- *(1) Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+                                                                                                                        +- *(1) Project [location_id#1, parameter#3, units#4, value#5, date_trunc(hour, event_time#9, Some(UTC)) AS hour_utc#985]
+                                                                                                                           +- TableCacheQueryStage 0
+                                                                                                                              +- InMemoryTableScan [event_time#9, location_id#1, parameter#3, units#4, value#5]
+                                                                                                                                    +- InMemoryRelation [sensor_id#0, location_id#1, location_name#2, parameter#3, units#4, value#5, lat#6, lon#7, datetime_utc#8, event_time#9, datetime_local#10, hour_local#11, borough#12, quality_flag#13, ingested_at#14, source#15, year#16, month#17, date_local#18], StorageLevel(disk, memory, deserialized, 1 replicas)
+                                                                                                                                          +- *(1) ColumnarToRow
+                                                                                                                                             +- FileScan parquet [sensor_id#0,location_id#1,location_name#2,parameter#3,units#4,value#5,lat#6,lon#7,datetime_utc#8,event_time#9,datetime_local#10,hour_local#11,borough#12,quality_flag#13,ingested_at#14,source#15,year#16,month#17,date_local#18] Batched: true, DataFilters: [], Format: Parquet, Location: InMemoryFileIndex(396 paths)[s3a://aq-lake/silver/measurements/year=2024/month=8/date_local=2024-..., PartitionFilters: [], PushedFilters: [], ReadSchema: struct<sensor_id:int,location_id:int,location_name:string,parameter:string,units:string,value:dou...
+                                                                                                +- == Initial Plan ==
+                                                                                                   Project [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, cast(pythonUDF0#1256 as int) AS aqi_hourly#1056]
+                                                                                                   +- ArrowEvalPython [aqi_udf(parameter#3, value_avg#1027, units#1031, instant)#1055], [pythonUDF0#1256], 200
+                                                                                                      +- SortAggregate(key=[location_id#1, parameter#3, hour_utc#985], functions=[avg(value#5), count(value#5), first(units#4, true)], output=[location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046])
+                                                                                                         +- Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+                                                                                                            +- Exchange hashpartitioning(location_id#1, parameter#3, hour_utc#985, 200), ENSURE_REQUIREMENTS, [plan_id=215]
+                                                                                                               +- SortAggregate(key=[location_id#1, parameter#3, hour_utc#985], functions=[partial_avg(value#5), partial_count(value#5), partial_first(units#4, true)], output=[location_id#1, parameter#3, hour_utc#985, sum#1357, count#1358L, count#1359L, first#1360, valueSet#1361])
+                                                                                                                  +- Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+                                                                                                                     +- Project [location_id#1, parameter#3, units#4, value#5, date_trunc(hour, event_time#9, Some(UTC)) AS hour_utc#985]
+                                                                                                                        +- InMemoryTableScan [event_time#9, location_id#1, parameter#3, units#4, value#5]
+                                                                                                                              +- InMemoryRelation [sensor_id#0, location_id#1, location_name#2, parameter#3, units#4, value#5, lat#6, lon#7, datetime_utc#8, event_time#9, datetime_local#10, hour_local#11, borough#12, quality_flag#13, ingested_at#14, source#15, year#16, month#17, date_local#18], StorageLevel(disk, memory, deserialized, 1 replicas)
+                                                                                                                                    +- *(1) ColumnarToRow
+                                                                                                                                       +- FileScan parquet [sensor_id#0,location_id#1,location_name#2,parameter#3,units#4,value#5,lat#6,lon#7,datetime_utc#8,event_time#9,datetime_local#10,hour_local#11,borough#12,quality_flag#13,ingested_at#14,source#15,year#16,month#17,date_local#18] Batched: true, DataFilters: [], Format: Parquet, Location: InMemoryFileIndex(396 paths)[s3a://aq-lake/silver/measurements/year=2024/month=8/date_local=2024-..., PartitionFilters: [], PushedFilters: [], ReadSchema: struct<sensor_id:int,location_id:int,location_name:string,parameter:string,units:string,value:dou...
++- == Initial Plan ==
+   Project [location_id#1, date_local#1038, dominant_pollutant#1893, aqi_daily#1895, pythonUDF0#2005 AS level#1901]
+   +- ArrowEvalPython [level_name_udf(aqi_daily#1895)#1900], [pythonUDF0#2005], 200
+      +- SortAggregate(key=[location_id#1, date_local#1038], functions=[max_by(parameter#3, param_aqi#1873), max(param_aqi#1873)], output=[location_id#1, date_local#1038, dominant_pollutant#1893, aqi_daily#1895])
+         +- Sort [location_id#1 ASC NULLS FIRST, date_local#1038 ASC NULLS FIRST], false, 0
+            +- Exchange hashpartitioning(location_id#1, date_local#1038, 200), ENSURE_REQUIREMENTS, [plan_id=431]
+               +- SortAggregate(key=[location_id#1, date_local#1038], functions=[partial_max_by(parameter#3, param_aqi#1873), partial_max(param_aqi#1873)], output=[location_id#1, date_local#1038, valueWithExtremumOrdering#2054, extremumOrdering#2055, max#2056])
+                  +- Sort [location_id#1 ASC NULLS FIRST, date_local#1038 ASC NULLS FIRST], false, 0
+                     +- Project [location_id#1, date_local#1038, parameter#3, CASE WHEN parameter#3 IN (pm25,pm10) THEN CASE WHEN (n_hours#1854L >= 18) THEN cast(pythonUDF0#2001 as int) END WHEN (parameter#3 = o3) THEN greatest(cast(pythonUDF1#2002 as int), cast(pythonUDF2#2003 as int)) WHEN (parameter#3 = co) THEN cast(pythonUDF1#2002 as int) WHEN parameter#3 IN (no2,so2) THEN cast(pythonUDF3#2004 as int) END AS param_aqi#1873]
+                        +- ArrowEvalPython [aqi_udf(parameter#3, avg_24h#1852, units#1860, 24h)#1869, aqi_udf(parameter#3, max_8h#1858, units#1860, 8h)#1870, aqi_udf(parameter#3, max_1h#1856, units#1860, 1h)#1871, aqi_udf(parameter#3, max_1h#1856, units#1860, instant)#1872], [pythonUDF0#2001, pythonUDF1#2002, pythonUDF2#2003, pythonUDF3#2004], 200
+                           +- Project [location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860]
+                              +- Filter isnotnull(CASE WHEN parameter#3 IN (pm25,pm10) THEN CASE WHEN (n_hours#1854L >= 18) THEN cast(pythonUDF0#1997 as int) END WHEN (parameter#3 = o3) THEN greatest(cast(pythonUDF1#1998 as int), cast(pythonUDF2#1999 as int)) WHEN (parameter#3 = co) THEN cast(pythonUDF1#1998 as int) WHEN parameter#3 IN (no2,so2) THEN cast(pythonUDF3#2000 as int) END)
+                                 +- ArrowEvalPython [aqi_udf(parameter#3, avg_24h#1852, units#1860, 24h)#1869, aqi_udf(parameter#3, max_8h#1858, units#1860, 8h)#1870, aqi_udf(parameter#3, max_1h#1856, units#1860, 1h)#1871, aqi_udf(parameter#3, max_1h#1856, units#1860, instant)#1872], [pythonUDF0#1997, pythonUDF1#1998, pythonUDF2#1999, pythonUDF3#2000], 200
+                                    +- SortAggregate(key=[location_id#1, date_local#1038, parameter#3], functions=[avg(value_avg#1027), count(value_avg#1027), max(value_avg#1027), max(avg_8h#1828), first(units#1031, true)], output=[location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860])
+                                       +- SortAggregate(key=[location_id#1, date_local#1038, parameter#3], functions=[partial_avg(value_avg#1027), partial_count(value_avg#1027), partial_max(value_avg#1027), partial_max(avg_8h#1828), partial_first(units#1031, true)], output=[location_id#1, date_local#1038, parameter#3, sum#2064, count#2065L, count#2066L, max#2067, max#2068, first#2069, valueSet#2070])
+                                          +- Sort [location_id#1 ASC NULLS FIRST, date_local#1038 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST], false, 0
+                                             +- Project [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, CASE WHEN (n_8h#1815L >= 6) THEN avg_8h#1802 END AS avg_8h#1828]
+                                                +- Filter (isnotnull(date_local#1038) AND ((date_local#1038 >= 2024-08-01) AND (date_local#1038 <= 2026-06-30)))
+                                                   +- Window [count(value_avg#1027) windowspecdefinition(location_id#1, parameter#3, _w0#1816L ASC NULLS FIRST, specifiedwindowframe(RangeFrame, -25200, currentrow$())) AS n_8h#1815L], [location_id#1, parameter#3], [_w0#1816L ASC NULLS FIRST]
+                                                      +- Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, _w0#1816L ASC NULLS FIRST], false, 0
+                                                         +- Project [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1802, cast(hour_utc#985 as bigint) AS _w0#1816L]
+                                                            +- Window [avg(value_avg#1027) windowspecdefinition(location_id#1, parameter#3, _w0#1803L ASC NULLS FIRST, specifiedwindowframe(RangeFrame, -25200, currentrow$())) AS avg_8h#1802], [location_id#1, parameter#3], [_w0#1803L ASC NULLS FIRST]
+                                                               +- Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, _w0#1803L ASC NULLS FIRST], false, 0
+                                                                  +- Exchange hashpartitioning(location_id#1, parameter#3, 200), ENSURE_REQUIREMENTS, [plan_id=409]
+                                                                     +- Project [location_id#1, parameter#3, hour_utc#985, value_avg#1027, units#1031, date_local#1038, cast(hour_utc#985 as bigint) AS _w0#1803L]
+                                                                        +- InMemoryTableScan [date_local#1038, hour_utc#985, location_id#1, parameter#3, units#1031, value_avg#1027]
+                                                                              +- InMemoryRelation [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, aqi_hourly#1056], StorageLevel(disk, memory, deserialized, 1 replicas)
+                                                                                    +- AdaptiveSparkPlan isFinalPlan=true
+                                                                                    +- == Final Plan ==
+                                                                                       *(3) Project [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, cast(pythonUDF0#1256 as int) AS aqi_hourly#1056]
+                                                                                       +- ArrowEvalPython [aqi_udf(parameter#3, value_avg#1027, units#1031, instant)#1055], [pythonUDF0#1256], 200
+                                                                                          +- SortAggregate(key=[location_id#1, parameter#3, hour_utc#985], functions=[avg(value#5), count(value#5), first(units#4, true)], output=[location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046])
+                                                                                             +- *(2) Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+                                                                                                +- ShuffleQueryStage 1
+                                                                                                   +- Exchange hashpartitioning(location_id#1, parameter#3, hour_utc#985, 200), ENSURE_REQUIREMENTS, [plan_id=294]
+                                                                                                      +- SortAggregate(key=[location_id#1, parameter#3, hour_utc#985], functions=[partial_avg(value#5), partial_count(value#5), partial_first(units#4, true)], output=[location_id#1, parameter#3, hour_utc#985, sum#1357, count#1358L, count#1359L, first#1360, valueSet#1361])
+                                                                                                         +- *(1) Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+                                                                                                            +- *(1) Project [location_id#1, parameter#3, units#4, value#5, date_trunc(hour, event_time#9, Some(UTC)) AS hour_utc#985]
+                                                                                                               +- TableCacheQueryStage 0
+                                                                                                                  +- InMemoryTableScan [event_time#9, location_id#1, parameter#3, units#4, value#5]
+                                                                                                                        +- InMemoryRelation [sensor_id#0, location_id#1, location_name#2, parameter#3, units#4, value#5, lat#6, lon#7, datetime_utc#8, event_time#9, datetime_local#10, hour_local#11, borough#12, quality_flag#13, ingested_at#14, source#15, year#16, month#17, date_local#18], StorageLevel(disk, memory, deserialized, 1 replicas)
+                                                                                                                              +- *(1) ColumnarToRow
+                                                                                                                                 +- FileScan parquet [sensor_id#0,location_id#1,location_name#2,parameter#3,units#4,value#5,lat#6,lon#7,datetime_utc#8,event_time#9,datetime_local#10,hour_local#11,borough#12,quality_flag#13,ingested_at#14,source#15,year#16,month#17,date_local#18] Batched: true, DataFilters: [], Format: Parquet, Location: InMemoryFileIndex(396 paths)[s3a://aq-lake/silver/measurements/year=2024/month=8/date_local=2024-..., PartitionFilters: [], PushedFilters: [], ReadSchema: struct<sensor_id:int,location_id:int,location_name:string,parameter:string,units:string,value:dou...
+                                                                                    +- == Initial Plan ==
+                                                                                       Project [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, cast(pythonUDF0#1256 as int) AS aqi_hourly#1056]
+                                                                                       +- ArrowEvalPython [aqi_udf(parameter#3, value_avg#1027, units#1031, instant)#1055], [pythonUDF0#1256], 200
+                                                                                          +- SortAggregate(key=[location_id#1, parameter#3, hour_utc#985], functions=[avg(value#5), count(value#5), first(units#4, true)], output=[location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046])
+                                                                                             +- Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+                                                                                                +- Exchange hashpartitioning(location_id#1, parameter#3, hour_utc#985, 200), ENSURE_REQUIREMENTS, [plan_id=215]
+                                                                                                   +- SortAggregate(key=[location_id#1, parameter#3, hour_utc#985], functions=[partial_avg(value#5), partial_count(value#5), partial_first(units#4, true)], output=[location_id#1, parameter#3, hour_utc#985, sum#1357, count#1358L, count#1359L, first#1360, valueSet#1361])
+                                                                                                      +- Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+                                                                                                         +- Project [location_id#1, parameter#3, units#4, value#5, date_trunc(hour, event_time#9, Some(UTC)) AS hour_utc#985]
+                                                                                                            +- InMemoryTableScan [event_time#9, location_id#1, parameter#3, units#4, value#5]
+                                                                                                                  +- InMemoryRelation [sensor_id#0, location_id#1, location_name#2, parameter#3, units#4, value#5, lat#6, lon#7, datetime_utc#8, event_time#9, datetime_local#10, hour_local#11, borough#12, quality_flag#13, ingested_at#14, source#15, year#16, month#17, date_local#18], StorageLevel(disk, memory, deserialized, 1 replicas)
+                                                                                                                        +- *(1) ColumnarToRow
+                                                                                                                           +- FileScan parquet [sensor_id#0,location_id#1,location_name#2,parameter#3,units#4,value#5,lat#6,lon#7,datetime_utc#8,event_time#9,datetime_local#10,hour_local#11,borough#12,quality_flag#13,ingested_at#14,source#15,year#16,month#17,date_local#18] Batched: true, DataFilters: [], Format: Parquet, Location: InMemoryFileIndex(396 paths)[s3a://aq-lake/silver/measurements/year=2024/month=8/date_local=2024-..., PartitionFilters: [], PushedFilters: [], ReadSchema: struct<sensor_id:int,location_id:int,location_name:string,parameter:string,units:string,value:dou...
+,None)
+
+(3) InMemoryTableScan
+Output [6]: [date_local#1038, hour_utc#985, location_id#1, parameter#3, units#1031, value_avg#1027]
+Arguments: [date_local#1038, hour_utc#985, location_id#1, parameter#3, units#1031, value_avg#1027]
+
+(4) InMemoryRelation
+Arguments: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, aqi_hourly#1056], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@3b5fe2e1,StorageLevel(disk, memory, deserialized, 1 replicas),AdaptiveSparkPlan isFinalPlan=true
++- == Final Plan ==
+   *(3) Project [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, cast(pythonUDF0#1256 as int) AS aqi_hourly#1056]
+   +- ArrowEvalPython [aqi_udf(parameter#3, value_avg#1027, units#1031, instant)#1055], [pythonUDF0#1256], 200
+      +- SortAggregate(key=[location_id#1, parameter#3, hour_utc#985], functions=[avg(value#5), count(value#5), first(units#4, true)], output=[location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046])
+         +- *(2) Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+            +- ShuffleQueryStage 1
+               +- Exchange hashpartitioning(location_id#1, parameter#3, hour_utc#985, 200), ENSURE_REQUIREMENTS, [plan_id=294]
+                  +- SortAggregate(key=[location_id#1, parameter#3, hour_utc#985], functions=[partial_avg(value#5), partial_count(value#5), partial_first(units#4, true)], output=[location_id#1, parameter#3, hour_utc#985, sum#1357, count#1358L, count#1359L, first#1360, valueSet#1361])
+                     +- *(1) Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+                        +- *(1) Project [location_id#1, parameter#3, units#4, value#5, date_trunc(hour, event_time#9, Some(UTC)) AS hour_utc#985]
+                           +- TableCacheQueryStage 0
+                              +- InMemoryTableScan [event_time#9, location_id#1, parameter#3, units#4, value#5]
+                                    +- InMemoryRelation [sensor_id#0, location_id#1, location_name#2, parameter#3, units#4, value#5, lat#6, lon#7, datetime_utc#8, event_time#9, datetime_local#10, hour_local#11, borough#12, quality_flag#13, ingested_at#14, source#15, year#16, month#17, date_local#18], StorageLevel(disk, memory, deserialized, 1 replicas)
+                                          +- *(1) ColumnarToRow
+                                             +- FileScan parquet [sensor_id#0,location_id#1,location_name#2,parameter#3,units#4,value#5,lat#6,lon#7,datetime_utc#8,event_time#9,datetime_local#10,hour_local#11,borough#12,quality_flag#13,ingested_at#14,source#15,year#16,month#17,date_local#18] Batched: true, DataFilters: [], Format: Parquet, Location: InMemoryFileIndex(396 paths)[s3a://aq-lake/silver/measurements/year=2024/month=8/date_local=2024-..., PartitionFilters: [], PushedFilters: [], ReadSchema: struct<sensor_id:int,location_id:int,location_name:string,parameter:string,units:string,value:dou...
++- == Initial Plan ==
+   Project [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, cast(pythonUDF0#1256 as int) AS aqi_hourly#1056]
+   +- ArrowEvalPython [aqi_udf(parameter#3, value_avg#1027, units#1031, instant)#1055], [pythonUDF0#1256], 200
+      +- SortAggregate(key=[location_id#1, parameter#3, hour_utc#985], functions=[avg(value#5), count(value#5), first(units#4, true)], output=[location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046])
+         +- Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+            +- Exchange hashpartitioning(location_id#1, parameter#3, hour_utc#985, 200), ENSURE_REQUIREMENTS, [plan_id=215]
+               +- SortAggregate(key=[location_id#1, parameter#3, hour_utc#985], functions=[partial_avg(value#5), partial_count(value#5), partial_first(units#4, true)], output=[location_id#1, parameter#3, hour_utc#985, sum#1357, count#1358L, count#1359L, first#1360, valueSet#1361])
+                  +- Sort [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+                     +- Project [location_id#1, parameter#3, units#4, value#5, date_trunc(hour, event_time#9, Some(UTC)) AS hour_utc#985]
+                        +- InMemoryTableScan [event_time#9, location_id#1, parameter#3, units#4, value#5]
+                              +- InMemoryRelation [sensor_id#0, location_id#1, location_name#2, parameter#3, units#4, value#5, lat#6, lon#7, datetime_utc#8, event_time#9, datetime_local#10, hour_local#11, borough#12, quality_flag#13, ingested_at#14, source#15, year#16, month#17, date_local#18], StorageLevel(disk, memory, deserialized, 1 replicas)
+                                    +- *(1) ColumnarToRow
+                                       +- FileScan parquet [sensor_id#0,location_id#1,location_name#2,parameter#3,units#4,value#5,lat#6,lon#7,datetime_utc#8,event_time#9,datetime_local#10,hour_local#11,borough#12,quality_flag#13,ingested_at#14,source#15,year#16,month#17,date_local#18] Batched: true, DataFilters: [], Format: Parquet, Location: InMemoryFileIndex(396 paths)[s3a://aq-lake/silver/measurements/year=2024/month=8/date_local=2024-..., PartitionFilters: [], PushedFilters: [], ReadSchema: struct<sensor_id:int,location_id:int,location_name:string,parameter:string,units:string,value:dou...
+,None)
+
+(5) InMemoryTableScan
+Output [5]: [event_time#9, location_id#1, parameter#3, units#4, value#5]
+Arguments: [event_time#9, location_id#1, parameter#3, units#4, value#5]
+
+(6) InMemoryRelation
+Arguments: [sensor_id#0, location_id#1, location_name#2, parameter#3, units#4, value#5, lat#6, lon#7, datetime_utc#8, event_time#9, datetime_local#10, hour_local#11, borough#12, quality_flag#13, ingested_at#14, source#15, year#16, month#17, date_local#18], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@3b5fe2e1,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) ColumnarToRow
++- FileScan parquet [sensor_id#0,location_id#1,location_name#2,parameter#3,units#4,value#5,lat#6,lon#7,datetime_utc#8,event_time#9,datetime_local#10,hour_local#11,borough#12,quality_flag#13,ingested_at#14,source#15,year#16,month#17,date_local#18] Batched: true, DataFilters: [], Format: Parquet, Location: InMemoryFileIndex(396 paths)[s3a://aq-lake/silver/measurements/year=2024/month=8/date_local=2024-..., PartitionFilters: [], PushedFilters: [], ReadSchema: struct<sensor_id:int,location_id:int,location_name:string,parameter:string,units:string,value:dou...
+,None)
+
+(7) Scan parquet 
+Output [19]: [sensor_id#0, location_id#1, location_name#2, parameter#3, units#4, value#5, lat#6, lon#7, datetime_utc#8, event_time#9, datetime_local#10, hour_local#11, borough#12, quality_flag#13, ingested_at#14, source#15, year#16, month#17, date_local#18]
+Batched: true
+Location: InMemoryFileIndex [s3a://aq-lake/silver/measurements/year=2024/month=8/date_local=2024-08-01, ... 395 entries]
+ReadSchema: struct<sensor_id:int,location_id:int,location_name:string,parameter:string,units:string,value:double,lat:double,lon:double,datetime_utc:string,event_time:timestamp,datetime_local:string,hour_local:int,borough:string,quality_flag:string,ingested_at:string,source:string>
+
+(8) ColumnarToRow [codegen id : 1]
+Input [19]: [sensor_id#0, location_id#1, location_name#2, parameter#3, units#4, value#5, lat#6, lon#7, datetime_utc#8, event_time#9, datetime_local#10, hour_local#11, borough#12, quality_flag#13, ingested_at#14, source#15, year#16, month#17, date_local#18]
+
+(9) TableCacheQueryStage
+Output [5]: [event_time#9, location_id#1, parameter#3, units#4, value#5]
+Arguments: 0
+
+(10) Project [codegen id : 1]
+Output [5]: [location_id#1, parameter#3, units#4, value#5, date_trunc(hour, event_time#9, Some(UTC)) AS hour_utc#985]
+Input [5]: [event_time#9, location_id#1, parameter#3, units#4, value#5]
+
+(11) Sort [codegen id : 1]
+Input [5]: [location_id#1, parameter#3, units#4, value#5, hour_utc#985]
+Arguments: [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+
+(12) SortAggregate
+Input [5]: [location_id#1, parameter#3, units#4, value#5, hour_utc#985]
+Keys [3]: [location_id#1, parameter#3, hour_utc#985]
+Functions [3]: [partial_avg(value#5), partial_count(value#5), partial_first(units#4, true)]
+Aggregate Attributes [5]: [sum#1352, count#1353L, count#1354L, first#1355, valueSet#1356]
+Results [8]: [location_id#1, parameter#3, hour_utc#985, sum#1357, count#1358L, count#1359L, first#1360, valueSet#1361]
+
+(13) Exchange
+Input [8]: [location_id#1, parameter#3, hour_utc#985, sum#1357, count#1358L, count#1359L, first#1360, valueSet#1361]
+Arguments: hashpartitioning(location_id#1, parameter#3, hour_utc#985, 200), ENSURE_REQUIREMENTS, [plan_id=294]
+
+(14) ShuffleQueryStage
+Output [8]: [location_id#1, parameter#3, hour_utc#985, sum#1357, count#1358L, count#1359L, first#1360, valueSet#1361]
+Arguments: 1
+
+(15) Sort [codegen id : 2]
+Input [8]: [location_id#1, parameter#3, hour_utc#985, sum#1357, count#1358L, count#1359L, first#1360, valueSet#1361]
+Arguments: [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+
+(16) SortAggregate
+Input [8]: [location_id#1, parameter#3, hour_utc#985, sum#1357, count#1358L, count#1359L, first#1360, valueSet#1361]
+Keys [3]: [location_id#1, parameter#3, hour_utc#985]
+Functions [3]: [avg(value#5), count(value#5), first(units#4, true)]
+Aggregate Attributes [3]: [avg(value#5)#1026, count(value#5)#1028L, first(units#4) ignore nulls#1030]
+Results [8]: [location_id#1, parameter#3, hour_utc#985, avg(value#5)#1026 AS value_avg#1027, count(value#5)#1028L AS n_readings#1029L, first(units#4) ignore nulls#1030 AS units#1031, cast(from_utc_timestamp(hour_utc#985, America/New_York) as date) AS date_local#1038, hour(from_utc_timestamp(hour_utc#985, America/New_York), Some(UTC)) AS hour_local#1046]
+
+(17) ArrowEvalPython
+Input [8]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046]
+Arguments: [aqi_udf(parameter#3, value_avg#1027, units#1031, instant)#1055], [pythonUDF0#1256], 200
+
+(18) Project [codegen id : 3]
+Output [9]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, cast(pythonUDF0#1256 as int) AS aqi_hourly#1056]
+Input [9]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, pythonUDF0#1256]
+
+(19) Project
+Output [5]: [location_id#1, parameter#3, units#4, value#5, date_trunc(hour, event_time#9, Some(UTC)) AS hour_utc#985]
+Input [5]: [event_time#9, location_id#1, parameter#3, units#4, value#5]
+
+(20) Sort
+Input [5]: [location_id#1, parameter#3, units#4, value#5, hour_utc#985]
+Arguments: [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+
+(21) SortAggregate
+Input [5]: [location_id#1, parameter#3, units#4, value#5, hour_utc#985]
+Keys [3]: [location_id#1, parameter#3, hour_utc#985]
+Functions [3]: [partial_avg(value#5), partial_count(value#5), partial_first(units#4, true)]
+Aggregate Attributes [5]: [sum#1352, count#1353L, count#1354L, first#1355, valueSet#1356]
+Results [8]: [location_id#1, parameter#3, hour_utc#985, sum#1357, count#1358L, count#1359L, first#1360, valueSet#1361]
+
+(22) Exchange
+Input [8]: [location_id#1, parameter#3, hour_utc#985, sum#1357, count#1358L, count#1359L, first#1360, valueSet#1361]
+Arguments: hashpartitioning(location_id#1, parameter#3, hour_utc#985, 200), ENSURE_REQUIREMENTS, [plan_id=215]
+
+(23) Sort
+Input [8]: [location_id#1, parameter#3, hour_utc#985, sum#1357, count#1358L, count#1359L, first#1360, valueSet#1361]
+Arguments: [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, hour_utc#985 ASC NULLS FIRST], false, 0
+
+(24) SortAggregate
+Input [8]: [location_id#1, parameter#3, hour_utc#985, sum#1357, count#1358L, count#1359L, first#1360, valueSet#1361]
+Keys [3]: [location_id#1, parameter#3, hour_utc#985]
+Functions [3]: [avg(value#5), count(value#5), first(units#4, true)]
+Aggregate Attributes [3]: [avg(value#5)#1026, count(value#5)#1028L, first(units#4) ignore nulls#1030]
+Results [8]: [location_id#1, parameter#3, hour_utc#985, avg(value#5)#1026 AS value_avg#1027, count(value#5)#1028L AS n_readings#1029L, first(units#4) ignore nulls#1030 AS units#1031, cast(from_utc_timestamp(hour_utc#985, America/New_York) as date) AS date_local#1038, hour(from_utc_timestamp(hour_utc#985, America/New_York), Some(UTC)) AS hour_local#1046]
+
+(25) ArrowEvalPython
+Input [8]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046]
+Arguments: [aqi_udf(parameter#3, value_avg#1027, units#1031, instant)#1055], [pythonUDF0#1256], 200
+
+(26) Project
+Output [9]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, cast(pythonUDF0#1256 as int) AS aqi_hourly#1056]
+Input [9]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, pythonUDF0#1256]
+
+(27) AdaptiveSparkPlan
+Output [9]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, aqi_hourly#1056]
+Arguments: isFinalPlan=true
+
+(28) TableCacheQueryStage
+Output [6]: [date_local#1038, hour_utc#985, location_id#1, parameter#3, units#1031, value_avg#1027]
+Arguments: 0
+
+(29) Project [codegen id : 1]
+Output [7]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, units#1031, date_local#1038, cast(hour_utc#985 as bigint) AS _w0#1803L]
+Input [6]: [date_local#1038, hour_utc#985, location_id#1, parameter#3, units#1031, value_avg#1027]
+
+(30) Exchange
+Input [7]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, units#1031, date_local#1038, _w0#1803L]
+Arguments: hashpartitioning(location_id#1, parameter#3, 200), ENSURE_REQUIREMENTS, [plan_id=639]
+
+(31) ShuffleQueryStage
+Output [7]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, units#1031, date_local#1038, _w0#1803L]
+Arguments: 1
+
+(32) AQEShuffleRead
+Input [7]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, units#1031, date_local#1038, _w0#1803L]
+Arguments: coalesced
+
+(33) Sort [codegen id : 2]
+Input [7]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, units#1031, date_local#1038, _w0#1803L]
+Arguments: [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, _w0#1803L ASC NULLS FIRST], false, 0
+
+(34) Window
+Input [7]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, units#1031, date_local#1038, _w0#1803L]
+Arguments: [avg(value_avg#1027) windowspecdefinition(location_id#1, parameter#3, _w0#1803L ASC NULLS FIRST, specifiedwindowframe(RangeFrame, -25200, currentrow$())) AS avg_8h#1802], [location_id#1, parameter#3], [_w0#1803L ASC NULLS FIRST]
+
+(35) Project [codegen id : 3]
+Output [7]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1802, cast(hour_utc#985 as bigint) AS _w0#1816L]
+Input [8]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, units#1031, date_local#1038, _w0#1803L, avg_8h#1802]
+
+(36) Sort [codegen id : 3]
+Input [7]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1802, _w0#1816L]
+Arguments: [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, _w0#1816L ASC NULLS FIRST], false, 0
+
+(37) Window
+Input [7]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1802, _w0#1816L]
+Arguments: [count(value_avg#1027) windowspecdefinition(location_id#1, parameter#3, _w0#1816L ASC NULLS FIRST, specifiedwindowframe(RangeFrame, -25200, currentrow$())) AS n_8h#1815L], [location_id#1, parameter#3], [_w0#1816L ASC NULLS FIRST]
+
+(38) Filter [codegen id : 4]
+Input [8]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1802, _w0#1816L, n_8h#1815L]
+Condition : (isnotnull(date_local#1038) AND ((date_local#1038 >= 2024-08-01) AND (date_local#1038 <= 2026-06-30)))
+
+(39) Project [codegen id : 4]
+Output [6]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, CASE WHEN (n_8h#1815L >= 6) THEN avg_8h#1802 END AS avg_8h#1828]
+Input [8]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1802, _w0#1816L, n_8h#1815L]
+
+(40) Sort [codegen id : 4]
+Input [6]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1828]
+Arguments: [location_id#1 ASC NULLS FIRST, date_local#1038 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST], false, 0
+
+(41) SortAggregate
+Input [6]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1828]
+Keys [3]: [location_id#1, date_local#1038, parameter#3]
+Functions [5]: [partial_avg(value_avg#1027), partial_count(value_avg#1027), partial_max(value_avg#1027), partial_max(avg_8h#1828), partial_first(units#1031, true)]
+Aggregate Attributes [7]: [sum#2057, count#2058L, count#2059L, max#2060, max#2061, first#2062, valueSet#2063]
+Results [10]: [location_id#1, date_local#1038, parameter#3, sum#2064, count#2065L, count#2066L, max#2067, max#2068, first#2069, valueSet#2070]
+
+(42) SortAggregate
+Input [10]: [location_id#1, date_local#1038, parameter#3, sum#2064, count#2065L, count#2066L, max#2067, max#2068, first#2069, valueSet#2070]
+Keys [3]: [location_id#1, date_local#1038, parameter#3]
+Functions [5]: [avg(value_avg#1027), count(value_avg#1027), max(value_avg#1027), max(avg_8h#1828), first(units#1031, true)]
+Aggregate Attributes [5]: [avg(value_avg#1027)#1851, count(value_avg#1027)#1853L, max(value_avg#1027)#1855, max(avg_8h#1828)#1857, first(units#1031) ignore nulls#1859]
+Results [8]: [location_id#1, date_local#1038, parameter#3, avg(value_avg#1027)#1851 AS avg_24h#1852, count(value_avg#1027)#1853L AS n_hours#1854L, max(value_avg#1027)#1855 AS max_1h#1856, max(avg_8h#1828)#1857 AS max_8h#1858, first(units#1031) ignore nulls#1859 AS units#1860]
+
+(43) ArrowEvalPython
+Input [8]: [location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860]
+Arguments: [aqi_udf(parameter#3, avg_24h#1852, units#1860, 24h)#1869, aqi_udf(parameter#3, max_8h#1858, units#1860, 8h)#1870, aqi_udf(parameter#3, max_1h#1856, units#1860, 1h)#1871, aqi_udf(parameter#3, max_1h#1856, units#1860, instant)#1872], [pythonUDF0#1997, pythonUDF1#1998, pythonUDF2#1999, pythonUDF3#2000], 200
+
+(44) Filter [codegen id : 5]
+Input [12]: [location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860, pythonUDF0#1997, pythonUDF1#1998, pythonUDF2#1999, pythonUDF3#2000]
+Condition : isnotnull(CASE WHEN parameter#3 IN (pm25,pm10) THEN CASE WHEN (n_hours#1854L >= 18) THEN cast(pythonUDF0#1997 as int) END WHEN (parameter#3 = o3) THEN greatest(cast(pythonUDF1#1998 as int), cast(pythonUDF2#1999 as int)) WHEN (parameter#3 = co) THEN cast(pythonUDF1#1998 as int) WHEN parameter#3 IN (no2,so2) THEN cast(pythonUDF3#2000 as int) END)
+
+(45) Project [codegen id : 5]
+Output [8]: [location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860]
+Input [12]: [location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860, pythonUDF0#1997, pythonUDF1#1998, pythonUDF2#1999, pythonUDF3#2000]
+
+(46) ArrowEvalPython
+Input [8]: [location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860]
+Arguments: [aqi_udf(parameter#3, avg_24h#1852, units#1860, 24h)#1869, aqi_udf(parameter#3, max_8h#1858, units#1860, 8h)#1870, aqi_udf(parameter#3, max_1h#1856, units#1860, 1h)#1871, aqi_udf(parameter#3, max_1h#1856, units#1860, instant)#1872], [pythonUDF0#2001, pythonUDF1#2002, pythonUDF2#2003, pythonUDF3#2004], 200
+
+(47) Project [codegen id : 6]
+Output [4]: [location_id#1, date_local#1038, parameter#3, CASE WHEN parameter#3 IN (pm25,pm10) THEN CASE WHEN (n_hours#1854L >= 18) THEN cast(pythonUDF0#2001 as int) END WHEN (parameter#3 = o3) THEN greatest(cast(pythonUDF1#2002 as int), cast(pythonUDF2#2003 as int)) WHEN (parameter#3 = co) THEN cast(pythonUDF1#2002 as int) WHEN parameter#3 IN (no2,so2) THEN cast(pythonUDF3#2004 as int) END AS param_aqi#1873]
+Input [12]: [location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860, pythonUDF0#2001, pythonUDF1#2002, pythonUDF2#2003, pythonUDF3#2004]
+
+(48) Sort [codegen id : 6]
+Input [4]: [location_id#1, date_local#1038, parameter#3, param_aqi#1873]
+Arguments: [location_id#1 ASC NULLS FIRST, date_local#1038 ASC NULLS FIRST], false, 0
+
+(49) SortAggregate
+Input [4]: [location_id#1, date_local#1038, parameter#3, param_aqi#1873]
+Keys [2]: [location_id#1, date_local#1038]
+Functions [2]: [partial_max_by(parameter#3, param_aqi#1873), partial_max(param_aqi#1873)]
+Aggregate Attributes [3]: [valueWithExtremumOrdering#2051, extremumOrdering#2052, max#2053]
+Results [5]: [location_id#1, date_local#1038, valueWithExtremumOrdering#2054, extremumOrdering#2055, max#2056]
+
+(50) Exchange
+Input [5]: [location_id#1, date_local#1038, valueWithExtremumOrdering#2054, extremumOrdering#2055, max#2056]
+Arguments: hashpartitioning(location_id#1, date_local#1038, 200), ENSURE_REQUIREMENTS, [plan_id=823]
+
+(51) ShuffleQueryStage
+Output [5]: [location_id#1, date_local#1038, valueWithExtremumOrdering#2054, extremumOrdering#2055, max#2056]
+Arguments: 2
+
+(52) Sort [codegen id : 7]
+Input [5]: [location_id#1, date_local#1038, valueWithExtremumOrdering#2054, extremumOrdering#2055, max#2056]
+Arguments: [location_id#1 ASC NULLS FIRST, date_local#1038 ASC NULLS FIRST], false, 0
+
+(53) SortAggregate
+Input [5]: [location_id#1, date_local#1038, valueWithExtremumOrdering#2054, extremumOrdering#2055, max#2056]
+Keys [2]: [location_id#1, date_local#1038]
+Functions [2]: [max_by(parameter#3, param_aqi#1873), max(param_aqi#1873)]
+Aggregate Attributes [2]: [max_by(parameter#3, param_aqi#1873)#1892, max(param_aqi#1873)#1894]
+Results [4]: [location_id#1, date_local#1038, max_by(parameter#3, param_aqi#1873)#1892 AS dominant_pollutant#1893, max(param_aqi#1873)#1894 AS aqi_daily#1895]
+
+(54) ArrowEvalPython
+Input [4]: [location_id#1, date_local#1038, dominant_pollutant#1893, aqi_daily#1895]
+Arguments: [level_name_udf(aqi_daily#1895)#1900], [pythonUDF0#2005], 200
+
+(55) Project [codegen id : 8]
+Output [5]: [location_id#1, date_local#1038, dominant_pollutant#1893, aqi_daily#1895, pythonUDF0#2005 AS level#1901]
+Input [5]: [location_id#1, date_local#1038, dominant_pollutant#1893, aqi_daily#1895, pythonUDF0#2005]
+
+(56) Project
+Output [7]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, units#1031, date_local#1038, cast(hour_utc#985 as bigint) AS _w0#1803L]
+Input [6]: [date_local#1038, hour_utc#985, location_id#1, parameter#3, units#1031, value_avg#1027]
+
+(57) Exchange
+Input [7]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, units#1031, date_local#1038, _w0#1803L]
+Arguments: hashpartitioning(location_id#1, parameter#3, 200), ENSURE_REQUIREMENTS, [plan_id=409]
+
+(58) Sort
+Input [7]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, units#1031, date_local#1038, _w0#1803L]
+Arguments: [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, _w0#1803L ASC NULLS FIRST], false, 0
+
+(59) Window
+Input [7]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, units#1031, date_local#1038, _w0#1803L]
+Arguments: [avg(value_avg#1027) windowspecdefinition(location_id#1, parameter#3, _w0#1803L ASC NULLS FIRST, specifiedwindowframe(RangeFrame, -25200, currentrow$())) AS avg_8h#1802], [location_id#1, parameter#3], [_w0#1803L ASC NULLS FIRST]
+
+(60) Project
+Output [7]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1802, cast(hour_utc#985 as bigint) AS _w0#1816L]
+Input [8]: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, units#1031, date_local#1038, _w0#1803L, avg_8h#1802]
+
+(61) Sort
+Input [7]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1802, _w0#1816L]
+Arguments: [location_id#1 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST, _w0#1816L ASC NULLS FIRST], false, 0
+
+(62) Window
+Input [7]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1802, _w0#1816L]
+Arguments: [count(value_avg#1027) windowspecdefinition(location_id#1, parameter#3, _w0#1816L ASC NULLS FIRST, specifiedwindowframe(RangeFrame, -25200, currentrow$())) AS n_8h#1815L], [location_id#1, parameter#3], [_w0#1816L ASC NULLS FIRST]
+
+(63) Filter
+Input [8]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1802, _w0#1816L, n_8h#1815L]
+Condition : (isnotnull(date_local#1038) AND ((date_local#1038 >= 2024-08-01) AND (date_local#1038 <= 2026-06-30)))
+
+(64) Project
+Output [6]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, CASE WHEN (n_8h#1815L >= 6) THEN avg_8h#1802 END AS avg_8h#1828]
+Input [8]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1802, _w0#1816L, n_8h#1815L]
+
+(65) Sort
+Input [6]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1828]
+Arguments: [location_id#1 ASC NULLS FIRST, date_local#1038 ASC NULLS FIRST, parameter#3 ASC NULLS FIRST], false, 0
+
+(66) SortAggregate
+Input [6]: [location_id#1, parameter#3, value_avg#1027, units#1031, date_local#1038, avg_8h#1828]
+Keys [3]: [location_id#1, date_local#1038, parameter#3]
+Functions [5]: [partial_avg(value_avg#1027), partial_count(value_avg#1027), partial_max(value_avg#1027), partial_max(avg_8h#1828), partial_first(units#1031, true)]
+Aggregate Attributes [7]: [sum#2057, count#2058L, count#2059L, max#2060, max#2061, first#2062, valueSet#2063]
+Results [10]: [location_id#1, date_local#1038, parameter#3, sum#2064, count#2065L, count#2066L, max#2067, max#2068, first#2069, valueSet#2070]
+
+(67) SortAggregate
+Input [10]: [location_id#1, date_local#1038, parameter#3, sum#2064, count#2065L, count#2066L, max#2067, max#2068, first#2069, valueSet#2070]
+Keys [3]: [location_id#1, date_local#1038, parameter#3]
+Functions [5]: [avg(value_avg#1027), count(value_avg#1027), max(value_avg#1027), max(avg_8h#1828), first(units#1031, true)]
+Aggregate Attributes [5]: [avg(value_avg#1027)#1851, count(value_avg#1027)#1853L, max(value_avg#1027)#1855, max(avg_8h#1828)#1857, first(units#1031) ignore nulls#1859]
+Results [8]: [location_id#1, date_local#1038, parameter#3, avg(value_avg#1027)#1851 AS avg_24h#1852, count(value_avg#1027)#1853L AS n_hours#1854L, max(value_avg#1027)#1855 AS max_1h#1856, max(avg_8h#1828)#1857 AS max_8h#1858, first(units#1031) ignore nulls#1859 AS units#1860]
+
+(68) ArrowEvalPython
+Input [8]: [location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860]
+Arguments: [aqi_udf(parameter#3, avg_24h#1852, units#1860, 24h)#1869, aqi_udf(parameter#3, max_8h#1858, units#1860, 8h)#1870, aqi_udf(parameter#3, max_1h#1856, units#1860, 1h)#1871, aqi_udf(parameter#3, max_1h#1856, units#1860, instant)#1872], [pythonUDF0#1997, pythonUDF1#1998, pythonUDF2#1999, pythonUDF3#2000], 200
+
+(69) Filter
+Input [12]: [location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860, pythonUDF0#1997, pythonUDF1#1998, pythonUDF2#1999, pythonUDF3#2000]
+Condition : isnotnull(CASE WHEN parameter#3 IN (pm25,pm10) THEN CASE WHEN (n_hours#1854L >= 18) THEN cast(pythonUDF0#1997 as int) END WHEN (parameter#3 = o3) THEN greatest(cast(pythonUDF1#1998 as int), cast(pythonUDF2#1999 as int)) WHEN (parameter#3 = co) THEN cast(pythonUDF1#1998 as int) WHEN parameter#3 IN (no2,so2) THEN cast(pythonUDF3#2000 as int) END)
+
+(70) Project
+Output [8]: [location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860]
+Input [12]: [location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860, pythonUDF0#1997, pythonUDF1#1998, pythonUDF2#1999, pythonUDF3#2000]
+
+(71) ArrowEvalPython
+Input [8]: [location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860]
+Arguments: [aqi_udf(parameter#3, avg_24h#1852, units#1860, 24h)#1869, aqi_udf(parameter#3, max_8h#1858, units#1860, 8h)#1870, aqi_udf(parameter#3, max_1h#1856, units#1860, 1h)#1871, aqi_udf(parameter#3, max_1h#1856, units#1860, instant)#1872], [pythonUDF0#2001, pythonUDF1#2002, pythonUDF2#2003, pythonUDF3#2004], 200
+
+(72) Project
+Output [4]: [location_id#1, date_local#1038, parameter#3, CASE WHEN parameter#3 IN (pm25,pm10) THEN CASE WHEN (n_hours#1854L >= 18) THEN cast(pythonUDF0#2001 as int) END WHEN (parameter#3 = o3) THEN greatest(cast(pythonUDF1#2002 as int), cast(pythonUDF2#2003 as int)) WHEN (parameter#3 = co) THEN cast(pythonUDF1#2002 as int) WHEN parameter#3 IN (no2,so2) THEN cast(pythonUDF3#2004 as int) END AS param_aqi#1873]
+Input [12]: [location_id#1, date_local#1038, parameter#3, avg_24h#1852, n_hours#1854L, max_1h#1856, max_8h#1858, units#1860, pythonUDF0#2001, pythonUDF1#2002, pythonUDF2#2003, pythonUDF3#2004]
+
+(73) Sort
+Input [4]: [location_id#1, date_local#1038, parameter#3, param_aqi#1873]
+Arguments: [location_id#1 ASC NULLS FIRST, date_local#1038 ASC NULLS FIRST], false, 0
+
+(74) SortAggregate
+Input [4]: [location_id#1, date_local#1038, parameter#3, param_aqi#1873]
+Keys [2]: [location_id#1, date_local#1038]
+Functions [2]: [partial_max_by(parameter#3, param_aqi#1873), partial_max(param_aqi#1873)]
+Aggregate Attributes [3]: [valueWithExtremumOrdering#2051, extremumOrdering#2052, max#2053]
+Results [5]: [location_id#1, date_local#1038, valueWithExtremumOrdering#2054, extremumOrdering#2055, max#2056]
+
+(75) Exchange
+Input [5]: [location_id#1, date_local#1038, valueWithExtremumOrdering#2054, extremumOrdering#2055, max#2056]
+Arguments: hashpartitioning(location_id#1, date_local#1038, 200), ENSURE_REQUIREMENTS, [plan_id=431]
+
+(76) Sort
+Input [5]: [location_id#1, date_local#1038, valueWithExtremumOrdering#2054, extremumOrdering#2055, max#2056]
+Arguments: [location_id#1 ASC NULLS FIRST, date_local#1038 ASC NULLS FIRST], false, 0
+
+(77) SortAggregate
+Input [5]: [location_id#1, date_local#1038, valueWithExtremumOrdering#2054, extremumOrdering#2055, max#2056]
+Keys [2]: [location_id#1, date_local#1038]
+Functions [2]: [max_by(parameter#3, param_aqi#1873), max(param_aqi#1873)]
+Aggregate Attributes [2]: [max_by(parameter#3, param_aqi#1873)#1892, max(param_aqi#1873)#1894]
+Results [4]: [location_id#1, date_local#1038, max_by(parameter#3, param_aqi#1873)#1892 AS dominant_pollutant#1893, max(param_aqi#1873)#1894 AS aqi_daily#1895]
+
+(78) ArrowEvalPython
+Input [4]: [location_id#1, date_local#1038, dominant_pollutant#1893, aqi_daily#1895]
+Arguments: [level_name_udf(aqi_daily#1895)#1900], [pythonUDF0#2005], 200
+
+(79) Project
+Output [5]: [location_id#1, date_local#1038, dominant_pollutant#1893, aqi_daily#1895, pythonUDF0#2005 AS level#1901]
+Input [5]: [location_id#1, date_local#1038, dominant_pollutant#1893, aqi_daily#1895, pythonUDF0#2005]
+
+(80) AdaptiveSparkPlan
+Output [5]: [location_id#1, date_local#1038, dominant_pollutant#1893, aqi_daily#1895, level#1901]
+Arguments: isFinalPlan=true
+
+(81) Filter
+Input [3]: [location_id#1, date_local#1038, aqi_daily#1895]
+Condition : isnotnull(location_id#1)
+
+(82) InMemoryTableScan
+Output [2]: [location_id#817, borough#821]
+Arguments: [location_id#817, borough#821], [isnotnull(borough#821), isnotnull(location_id#817)]
+
+(83) InMemoryRelation
+Arguments: [location_id#817, name#818, lat#819, lon#820, borough#821, parameters#822], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@3b5fe2e1,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) Scan ExistingRDD[location_id#817,name#818,lat#819,lon#820,borough#821,parameters#822]
+,None)
+
+(84) Scan ExistingRDD [codegen id : 1]
+Output [6]: [location_id#817, name#818, lat#819, lon#820, borough#821, parameters#822]
+Arguments: [location_id#817, name#818, lat#819, lon#820, borough#821, parameters#822], MapPartitionsRDD[31] at applySchemaToPythonRDD at <unknown>:0, ExistingRDD, UnknownPartitioning(0)
+
+(85) Filter
+Input [2]: [location_id#817, borough#821]
+Condition : (isnotnull(borough#821) AND isnotnull(location_id#817))
+
+(86) BroadcastExchange
+Input [2]: [location_id#817, borough#821]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=940]
+
+(87) BroadcastHashJoin
+Left keys [1]: [location_id#1]
+Right keys [1]: [location_id#817]
+Join type: Inner
+Join condition: None
+
+(88) Project
+Output [4]: [location_id#1, date_local#1038, aqi_daily#1895, borough#821]
+Input [5]: [location_id#1, date_local#1038, aqi_daily#1895, location_id#817, borough#821]
+
+(89) HashAggregate
+Input [4]: [location_id#1, date_local#1038, aqi_daily#1895, borough#821]
+Keys [3]: [borough#821, date_local#1038, location_id#1]
+Functions [3]: [partial_max(aqi_daily#1895), partial_avg(aqi_daily#1895), partial_sum(CASE WHEN (aqi_daily#1895 >= 101) THEN 1 ELSE 0 END)]
+Aggregate Attributes [3]: [max(aqi_daily#1895)#2359, avg(aqi_daily#1895)#2361, sum(CASE WHEN (aqi_daily#1895 >= 101) THEN 1 ELSE 0 END)#2364L]
+Results [7]: [borough#821, date_local#1038, location_id#1, max#2539, sum#2542, count#2543L, sum#2545L]
+
+(90) Exchange
+Input [7]: [borough#821, date_local#1038, location_id#1, max#2539, sum#2542, count#2543L, sum#2545L]
+Arguments: hashpartitioning(borough#821, date_local#1038, location_id#1, 200), ENSURE_REQUIREMENTS, [plan_id=945]
+
+(91) HashAggregate
+Input [7]: [borough#821, date_local#1038, location_id#1, max#2539, sum#2542, count#2543L, sum#2545L]
+Keys [3]: [borough#821, date_local#1038, location_id#1]
+Functions [3]: [merge_max(aqi_daily#1895), merge_avg(aqi_daily#1895), merge_sum(CASE WHEN (aqi_daily#1895 >= 101) THEN 1 ELSE 0 END)]
+Aggregate Attributes [3]: [max(aqi_daily#1895)#2359, avg(aqi_daily#1895)#2361, sum(CASE WHEN (aqi_daily#1895 >= 101) THEN 1 ELSE 0 END)#2364L]
+Results [7]: [borough#821, date_local#1038, location_id#1, max#2539, sum#2542, count#2543L, sum#2545L]
+
+(92) HashAggregate
+Input [7]: [borough#821, date_local#1038, location_id#1, max#2539, sum#2542, count#2543L, sum#2545L]
+Keys [2]: [borough#821, date_local#1038]
+Functions [4]: [merge_max(aqi_daily#1895), merge_avg(aqi_daily#1895), merge_sum(CASE WHEN (aqi_daily#1895 >= 101) THEN 1 ELSE 0 END), partial_count(distinct location_id#1)]
+Aggregate Attributes [4]: [max(aqi_daily#1895)#2359, avg(aqi_daily#1895)#2361, sum(CASE WHEN (aqi_daily#1895 >= 101) THEN 1 ELSE 0 END)#2364L, count(location_id#1)#2366L]
+Results [7]: [borough#821, date_local#1038, max#2539, sum#2542, count#2543L, sum#2545L, count#2548L]
+
+(93) Exchange
+Input [7]: [borough#821, date_local#1038, max#2539, sum#2542, count#2543L, sum#2545L, count#2548L]
+Arguments: hashpartitioning(borough#821, date_local#1038, 200), ENSURE_REQUIREMENTS, [plan_id=949]
+
+(94) HashAggregate
+Input [7]: [borough#821, date_local#1038, max#2539, sum#2542, count#2543L, sum#2545L, count#2548L]
+Keys [2]: [borough#821, date_local#1038]
+Functions [4]: [max(aqi_daily#1895), avg(aqi_daily#1895), sum(CASE WHEN (aqi_daily#1895 >= 101) THEN 1 ELSE 0 END), count(distinct location_id#1)]
+Aggregate Attributes [4]: [max(aqi_daily#1895)#2359, avg(aqi_daily#1895)#2361, sum(CASE WHEN (aqi_daily#1895 >= 101) THEN 1 ELSE 0 END)#2364L, count(location_id#1)#2366L]
+Results [6]: [borough#821, date_local#1038, max(aqi_daily#1895)#2359 AS aqi_max#2360, avg(aqi_daily#1895)#2361 AS aqi_avg#2362, count(location_id#1)#2366L AS n_stations#2363L, sum(CASE WHEN (aqi_daily#1895 >= 101) THEN 1 ELSE 0 END)#2364L AS n_stations_usg#2365L]
+
+(95) AdaptiveSparkPlan
+Output [6]: [borough#821, date_local#1038, aqi_max#2360, aqi_avg#2362, n_stations#2363L, n_stations_usg#2365L]
+Arguments: isFinalPlan=false
+
