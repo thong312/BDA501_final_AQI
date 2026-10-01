@@ -49,40 +49,40 @@ AdaptiveSparkPlan (45)
 
 
 (1) Scan parquet 
-Output [5]: [location_id#3555, hour_utc#3557, hour_local#3561, aqi_hourly#3562, date_local#3563]
+Output [5]: [location_id#3543, hour_utc#3545, hour_local#3549, aqi_hourly#3550, date_local#3551]
 Batched: true
 Location: InMemoryFileIndex [s3a://aq-lake/gold/fact_hourly]
 PushedFilters: [IsNotNull(aqi_hourly), IsNotNull(location_id)]
 ReadSchema: struct<location_id:int,hour_utc:timestamp,hour_local:int,aqi_hourly:int>
 
 (2) Filter
-Input [5]: [location_id#3555, hour_utc#3557, hour_local#3561, aqi_hourly#3562, date_local#3563]
-Condition : (isnotnull(aqi_hourly#3562) AND isnotnull(location_id#3555))
+Input [5]: [location_id#3543, hour_utc#3545, hour_local#3549, aqi_hourly#3550, date_local#3551]
+Condition : (isnotnull(aqi_hourly#3550) AND isnotnull(location_id#3543))
 
 (3) HashAggregate
-Input [5]: [location_id#3555, hour_utc#3557, hour_local#3561, aqi_hourly#3562, date_local#3563]
-Keys [4]: [location_id#3555, hour_utc#3557, date_local#3563, hour_local#3561]
-Functions [1]: [partial_max(aqi_hourly#3562)]
-Aggregate Attributes [1]: [max#4042]
-Results [5]: [location_id#3555, hour_utc#3557, date_local#3563, hour_local#3561, max#4043]
+Input [5]: [location_id#3543, hour_utc#3545, hour_local#3549, aqi_hourly#3550, date_local#3551]
+Keys [4]: [location_id#3543, hour_utc#3545, date_local#3551, hour_local#3549]
+Functions [1]: [partial_max(aqi_hourly#3550)]
+Aggregate Attributes [1]: [max#4030]
+Results [5]: [location_id#3543, hour_utc#3545, date_local#3551, hour_local#3549, max#4031]
 
 (4) Exchange
-Input [5]: [location_id#3555, hour_utc#3557, date_local#3563, hour_local#3561, max#4043]
-Arguments: hashpartitioning(location_id#3555, hour_utc#3557, date_local#3563, hour_local#3561, 200), ENSURE_REQUIREMENTS, [plan_id=2173]
+Input [5]: [location_id#3543, hour_utc#3545, date_local#3551, hour_local#3549, max#4031]
+Arguments: hashpartitioning(location_id#3543, hour_utc#3545, date_local#3551, hour_local#3549, 200), ENSURE_REQUIREMENTS, [plan_id=2074]
 
 (5) HashAggregate
-Input [5]: [location_id#3555, hour_utc#3557, date_local#3563, hour_local#3561, max#4043]
-Keys [4]: [location_id#3555, hour_utc#3557, date_local#3563, hour_local#3561]
-Functions [1]: [max(aqi_hourly#3562)]
-Aggregate Attributes [1]: [max(aqi_hourly#3562)#3583]
-Results [3]: [location_id#3555, hour_local#3561, max(aqi_hourly#3562)#3583 AS aqi#3584]
+Input [5]: [location_id#3543, hour_utc#3545, date_local#3551, hour_local#3549, max#4031]
+Keys [4]: [location_id#3543, hour_utc#3545, date_local#3551, hour_local#3549]
+Functions [1]: [max(aqi_hourly#3550)]
+Aggregate Attributes [1]: [max(aqi_hourly#3550)#3571]
+Results [3]: [location_id#3543, hour_local#3549, max(aqi_hourly#3550)#3571 AS aqi#3572]
 
 (6) InMemoryTableScan
 Output [2]: [location_id#817, borough#821]
 Arguments: [location_id#817, borough#821], [isnotnull(borough#821), isnotnull(location_id#817)]
 
 (7) InMemoryRelation
-Arguments: [location_id#817, name#818, lat#819, lon#820, borough#821, parameters#822], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@5b0a0e84,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) Scan ExistingRDD[location_id#817,name#818,lat#819,lon#820,borough#821,parameters#822]
+Arguments: [location_id#817, name#818, lat#819, lon#820, borough#821, parameters#822], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@254b55d7,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) Scan ExistingRDD[location_id#817,name#818,lat#819,lon#820,borough#821,parameters#822]
 ,None)
 
 (8) Scan ExistingRDD [codegen id : 1]
@@ -95,185 +95,185 @@ Condition : (isnotnull(borough#821) AND isnotnull(location_id#817))
 
 (10) BroadcastExchange
 Input [2]: [location_id#817, borough#821]
-Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=2176]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=2077]
 
 (11) BroadcastHashJoin
-Left keys [1]: [location_id#3555]
+Left keys [1]: [location_id#3543]
 Right keys [1]: [location_id#817]
 Join type: Inner
 Join condition: None
 
 (12) Project
-Output [3]: [hour_local#3561, aqi#3584, borough#821]
-Input [5]: [location_id#3555, hour_local#3561, aqi#3584, location_id#817, borough#821]
+Output [3]: [hour_local#3549, aqi#3572, borough#821]
+Input [5]: [location_id#3543, hour_local#3549, aqi#3572, location_id#817, borough#821]
 
 (13) HashAggregate
-Input [3]: [hour_local#3561, aqi#3584, borough#821]
-Keys [2]: [borough#821, hour_local#3561]
-Functions [3]: [partial_avg(aqi#3584), partial_sum(CASE WHEN (aqi#3584 > 100) THEN 1 ELSE 0 END), partial_count(aqi#3584)]
-Aggregate Attributes [4]: [sum#4034, count#4035L, sum#4036L, count#4037L]
-Results [6]: [borough#821, hour_local#3561, sum#4038, count#4039L, sum#4040L, count#4041L]
+Input [3]: [hour_local#3549, aqi#3572, borough#821]
+Keys [2]: [borough#821, hour_local#3549]
+Functions [3]: [partial_avg(aqi#3572), partial_sum(CASE WHEN (aqi#3572 > 100) THEN 1 ELSE 0 END), partial_count(aqi#3572)]
+Aggregate Attributes [4]: [sum#4022, count#4023L, sum#4024L, count#4025L]
+Results [6]: [borough#821, hour_local#3549, sum#4026, count#4027L, sum#4028L, count#4029L]
 
 (14) Exchange
-Input [6]: [borough#821, hour_local#3561, sum#4038, count#4039L, sum#4040L, count#4041L]
-Arguments: hashpartitioning(borough#821, hour_local#3561, 200), ENSURE_REQUIREMENTS, [plan_id=2181]
+Input [6]: [borough#821, hour_local#3549, sum#4026, count#4027L, sum#4028L, count#4029L]
+Arguments: hashpartitioning(borough#821, hour_local#3549, 200), ENSURE_REQUIREMENTS, [plan_id=2082]
 
 (15) HashAggregate
-Input [6]: [borough#821, hour_local#3561, sum#4038, count#4039L, sum#4040L, count#4041L]
-Keys [2]: [borough#821, hour_local#3561]
-Functions [3]: [avg(aqi#3584), sum(CASE WHEN (aqi#3584 > 100) THEN 1 ELSE 0 END), count(aqi#3584)]
-Aggregate Attributes [3]: [avg(aqi#3584)#3638, sum(CASE WHEN (aqi#3584 > 100) THEN 1 ELSE 0 END)#3640L, count(aqi#3584)#3642L]
-Results [6]: [borough#821, hour_local AS grain#3649, hour_local#3561 AS bucket#3627, avg(aqi#3584)#3638 AS aqi_avg#3639, sum(CASE WHEN (aqi#3584 > 100) THEN 1 ELSE 0 END)#3640L AS hours_over_100#3641L, count(aqi#3584)#3642L AS n_station_hours#3643L]
+Input [6]: [borough#821, hour_local#3549, sum#4026, count#4027L, sum#4028L, count#4029L]
+Keys [2]: [borough#821, hour_local#3549]
+Functions [3]: [avg(aqi#3572), sum(CASE WHEN (aqi#3572 > 100) THEN 1 ELSE 0 END), count(aqi#3572)]
+Aggregate Attributes [3]: [avg(aqi#3572)#3626, sum(CASE WHEN (aqi#3572 > 100) THEN 1 ELSE 0 END)#3628L, count(aqi#3572)#3630L]
+Results [6]: [borough#821, hour_local AS grain#3637, hour_local#3549 AS bucket#3615, avg(aqi#3572)#3626 AS aqi_avg#3627, sum(CASE WHEN (aqi#3572 > 100) THEN 1 ELSE 0 END)#3628L AS hours_over_100#3629L, count(aqi#3572)#3630L AS n_station_hours#3631L]
 
 (16) Scan parquet 
-Output [5]: [location_id#3714, hour_utc#3716, hour_local#3720, aqi_hourly#3721, date_local#3722]
+Output [5]: [location_id#3702, hour_utc#3704, hour_local#3708, aqi_hourly#3709, date_local#3710]
 Batched: true
 Location: InMemoryFileIndex [s3a://aq-lake/gold/fact_hourly]
 PushedFilters: [IsNotNull(aqi_hourly), IsNotNull(location_id)]
 ReadSchema: struct<location_id:int,hour_utc:timestamp,hour_local:int,aqi_hourly:int>
 
 (17) Filter
-Input [5]: [location_id#3714, hour_utc#3716, hour_local#3720, aqi_hourly#3721, date_local#3722]
-Condition : (isnotnull(aqi_hourly#3721) AND isnotnull(location_id#3714))
+Input [5]: [location_id#3702, hour_utc#3704, hour_local#3708, aqi_hourly#3709, date_local#3710]
+Condition : (isnotnull(aqi_hourly#3709) AND isnotnull(location_id#3702))
 
 (18) HashAggregate
-Input [5]: [location_id#3714, hour_utc#3716, hour_local#3720, aqi_hourly#3721, date_local#3722]
-Keys [4]: [location_id#3714, hour_utc#3716, date_local#3722, hour_local#3720]
-Functions [1]: [partial_max(aqi_hourly#3721)]
-Aggregate Attributes [1]: [max#4052]
-Results [5]: [location_id#3714, hour_utc#3716, date_local#3722, hour_local#3720, max#4053]
+Input [5]: [location_id#3702, hour_utc#3704, hour_local#3708, aqi_hourly#3709, date_local#3710]
+Keys [4]: [location_id#3702, hour_utc#3704, date_local#3710, hour_local#3708]
+Functions [1]: [partial_max(aqi_hourly#3709)]
+Aggregate Attributes [1]: [max#4040]
+Results [5]: [location_id#3702, hour_utc#3704, date_local#3710, hour_local#3708, max#4041]
 
 (19) Exchange
-Input [5]: [location_id#3714, hour_utc#3716, date_local#3722, hour_local#3720, max#4053]
-Arguments: hashpartitioning(location_id#3714, hour_utc#3716, date_local#3722, hour_local#3720, 200), ENSURE_REQUIREMENTS, [plan_id=2183]
+Input [5]: [location_id#3702, hour_utc#3704, date_local#3710, hour_local#3708, max#4041]
+Arguments: hashpartitioning(location_id#3702, hour_utc#3704, date_local#3710, hour_local#3708, 200), ENSURE_REQUIREMENTS, [plan_id=2084]
 
 (20) HashAggregate
-Input [5]: [location_id#3714, hour_utc#3716, date_local#3722, hour_local#3720, max#4053]
-Keys [4]: [location_id#3714, hour_utc#3716, date_local#3722, hour_local#3720]
-Functions [1]: [max(aqi_hourly#3721)]
-Aggregate Attributes [1]: [max(aqi_hourly#3721)#3583]
-Results [3]: [location_id#3714, date_local#3722, max(aqi_hourly#3721)#3583 AS aqi#3584]
+Input [5]: [location_id#3702, hour_utc#3704, date_local#3710, hour_local#3708, max#4041]
+Keys [4]: [location_id#3702, hour_utc#3704, date_local#3710, hour_local#3708]
+Functions [1]: [max(aqi_hourly#3709)]
+Aggregate Attributes [1]: [max(aqi_hourly#3709)#3571]
+Results [3]: [location_id#3702, date_local#3710, max(aqi_hourly#3709)#3571 AS aqi#3572]
 
 (21) InMemoryTableScan
-Output [2]: [location_id#3723, borough#3727]
-Arguments: [location_id#3723, borough#3727], [isnotnull(borough#3727), isnotnull(location_id#3723)]
+Output [2]: [location_id#3711, borough#3715]
+Arguments: [location_id#3711, borough#3715], [isnotnull(borough#3715), isnotnull(location_id#3711)]
 
 (22) InMemoryRelation
-Arguments: [location_id#3723, name#3724, lat#3725, lon#3726, borough#3727, parameters#3728], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@5b0a0e84,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) Scan ExistingRDD[location_id#817,name#818,lat#819,lon#820,borough#821,parameters#822]
+Arguments: [location_id#3711, name#3712, lat#3713, lon#3714, borough#3715, parameters#3716], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@254b55d7,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) Scan ExistingRDD[location_id#817,name#818,lat#819,lon#820,borough#821,parameters#822]
 ,None)
 
 (23) Filter
-Input [2]: [location_id#3723, borough#3727]
-Condition : (isnotnull(borough#3727) AND isnotnull(location_id#3723))
+Input [2]: [location_id#3711, borough#3715]
+Condition : (isnotnull(borough#3715) AND isnotnull(location_id#3711))
 
 (24) BroadcastExchange
-Input [2]: [location_id#3723, borough#3727]
-Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=2186]
+Input [2]: [location_id#3711, borough#3715]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=2087]
 
 (25) BroadcastHashJoin
-Left keys [1]: [location_id#3714]
-Right keys [1]: [location_id#3723]
+Left keys [1]: [location_id#3702]
+Right keys [1]: [location_id#3711]
 Join type: Inner
 Join condition: None
 
 (26) Project
-Output [3]: [aqi#3584, borough#3727, dayofweek(date_local#3722) AS dow#3606]
-Input [5]: [location_id#3714, date_local#3722, aqi#3584, location_id#3723, borough#3727]
+Output [3]: [aqi#3572, borough#3715, dayofweek(date_local#3710) AS dow#3594]
+Input [5]: [location_id#3702, date_local#3710, aqi#3572, location_id#3711, borough#3715]
 
 (27) HashAggregate
-Input [3]: [aqi#3584, borough#3727, dow#3606]
-Keys [2]: [borough#3727, dow#3606]
-Functions [3]: [partial_avg(aqi#3584), partial_sum(CASE WHEN (aqi#3584 > 100) THEN 1 ELSE 0 END), partial_count(aqi#3584)]
-Aggregate Attributes [4]: [sum#4044, count#4045L, sum#4046L, count#4047L]
-Results [6]: [borough#3727, dow#3606, sum#4048, count#4049L, sum#4050L, count#4051L]
+Input [3]: [aqi#3572, borough#3715, dow#3594]
+Keys [2]: [borough#3715, dow#3594]
+Functions [3]: [partial_avg(aqi#3572), partial_sum(CASE WHEN (aqi#3572 > 100) THEN 1 ELSE 0 END), partial_count(aqi#3572)]
+Aggregate Attributes [4]: [sum#4032, count#4033L, sum#4034L, count#4035L]
+Results [6]: [borough#3715, dow#3594, sum#4036, count#4037L, sum#4038L, count#4039L]
 
 (28) Exchange
-Input [6]: [borough#3727, dow#3606, sum#4048, count#4049L, sum#4050L, count#4051L]
-Arguments: hashpartitioning(borough#3727, dow#3606, 200), ENSURE_REQUIREMENTS, [plan_id=2191]
+Input [6]: [borough#3715, dow#3594, sum#4036, count#4037L, sum#4038L, count#4039L]
+Arguments: hashpartitioning(borough#3715, dow#3594, 200), ENSURE_REQUIREMENTS, [plan_id=2092]
 
 (29) HashAggregate
-Input [6]: [borough#3727, dow#3606, sum#4048, count#4049L, sum#4050L, count#4051L]
-Keys [2]: [borough#3727, dow#3606]
-Functions [3]: [avg(aqi#3584), sum(CASE WHEN (aqi#3584 > 100) THEN 1 ELSE 0 END), count(aqi#3584)]
-Aggregate Attributes [3]: [avg(aqi#3584)#3667, sum(CASE WHEN (aqi#3584 > 100) THEN 1 ELSE 0 END)#3669L, count(aqi#3584)#3671L]
-Results [6]: [borough#3727, dow AS grain#3678, dow#3606 AS bucket#3656, avg(aqi#3584)#3667 AS aqi_avg#3668, sum(CASE WHEN (aqi#3584 > 100) THEN 1 ELSE 0 END)#3669L AS hours_over_100#3670L, count(aqi#3584)#3671L AS n_station_hours#3672L]
+Input [6]: [borough#3715, dow#3594, sum#4036, count#4037L, sum#4038L, count#4039L]
+Keys [2]: [borough#3715, dow#3594]
+Functions [3]: [avg(aqi#3572), sum(CASE WHEN (aqi#3572 > 100) THEN 1 ELSE 0 END), count(aqi#3572)]
+Aggregate Attributes [3]: [avg(aqi#3572)#3655, sum(CASE WHEN (aqi#3572 > 100) THEN 1 ELSE 0 END)#3657L, count(aqi#3572)#3659L]
+Results [6]: [borough#3715, dow AS grain#3666, dow#3594 AS bucket#3644, avg(aqi#3572)#3655 AS aqi_avg#3656, sum(CASE WHEN (aqi#3572 > 100) THEN 1 ELSE 0 END)#3657L AS hours_over_100#3658L, count(aqi#3572)#3659L AS n_station_hours#3660L]
 
 (30) Scan parquet 
-Output [5]: [location_id#3736, hour_utc#3738, hour_local#3742, aqi_hourly#3743, date_local#3744]
+Output [5]: [location_id#3724, hour_utc#3726, hour_local#3730, aqi_hourly#3731, date_local#3732]
 Batched: true
 Location: InMemoryFileIndex [s3a://aq-lake/gold/fact_hourly]
 PushedFilters: [IsNotNull(aqi_hourly), IsNotNull(location_id)]
 ReadSchema: struct<location_id:int,hour_utc:timestamp,hour_local:int,aqi_hourly:int>
 
 (31) Filter
-Input [5]: [location_id#3736, hour_utc#3738, hour_local#3742, aqi_hourly#3743, date_local#3744]
-Condition : (isnotnull(aqi_hourly#3743) AND isnotnull(location_id#3736))
+Input [5]: [location_id#3724, hour_utc#3726, hour_local#3730, aqi_hourly#3731, date_local#3732]
+Condition : (isnotnull(aqi_hourly#3731) AND isnotnull(location_id#3724))
 
 (32) HashAggregate
-Input [5]: [location_id#3736, hour_utc#3738, hour_local#3742, aqi_hourly#3743, date_local#3744]
-Keys [4]: [location_id#3736, hour_utc#3738, date_local#3744, hour_local#3742]
-Functions [1]: [partial_max(aqi_hourly#3743)]
-Aggregate Attributes [1]: [max#4062]
-Results [5]: [location_id#3736, hour_utc#3738, date_local#3744, hour_local#3742, max#4063]
+Input [5]: [location_id#3724, hour_utc#3726, hour_local#3730, aqi_hourly#3731, date_local#3732]
+Keys [4]: [location_id#3724, hour_utc#3726, date_local#3732, hour_local#3730]
+Functions [1]: [partial_max(aqi_hourly#3731)]
+Aggregate Attributes [1]: [max#4050]
+Results [5]: [location_id#3724, hour_utc#3726, date_local#3732, hour_local#3730, max#4051]
 
 (33) Exchange
-Input [5]: [location_id#3736, hour_utc#3738, date_local#3744, hour_local#3742, max#4063]
-Arguments: hashpartitioning(location_id#3736, hour_utc#3738, date_local#3744, hour_local#3742, 200), ENSURE_REQUIREMENTS, [plan_id=2193]
+Input [5]: [location_id#3724, hour_utc#3726, date_local#3732, hour_local#3730, max#4051]
+Arguments: hashpartitioning(location_id#3724, hour_utc#3726, date_local#3732, hour_local#3730, 200), ENSURE_REQUIREMENTS, [plan_id=2094]
 
 (34) HashAggregate
-Input [5]: [location_id#3736, hour_utc#3738, date_local#3744, hour_local#3742, max#4063]
-Keys [4]: [location_id#3736, hour_utc#3738, date_local#3744, hour_local#3742]
-Functions [1]: [max(aqi_hourly#3743)]
-Aggregate Attributes [1]: [max(aqi_hourly#3743)#3583]
-Results [3]: [location_id#3736, date_local#3744, max(aqi_hourly#3743)#3583 AS aqi#3584]
+Input [5]: [location_id#3724, hour_utc#3726, date_local#3732, hour_local#3730, max#4051]
+Keys [4]: [location_id#3724, hour_utc#3726, date_local#3732, hour_local#3730]
+Functions [1]: [max(aqi_hourly#3731)]
+Aggregate Attributes [1]: [max(aqi_hourly#3731)#3571]
+Results [3]: [location_id#3724, date_local#3732, max(aqi_hourly#3731)#3571 AS aqi#3572]
 
 (35) InMemoryTableScan
-Output [2]: [location_id#3745, borough#3749]
-Arguments: [location_id#3745, borough#3749], [isnotnull(borough#3749), isnotnull(location_id#3745)]
+Output [2]: [location_id#3733, borough#3737]
+Arguments: [location_id#3733, borough#3737], [isnotnull(borough#3737), isnotnull(location_id#3733)]
 
 (36) InMemoryRelation
-Arguments: [location_id#3745, name#3746, lat#3747, lon#3748, borough#3749, parameters#3750], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@5b0a0e84,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) Scan ExistingRDD[location_id#817,name#818,lat#819,lon#820,borough#821,parameters#822]
+Arguments: [location_id#3733, name#3734, lat#3735, lon#3736, borough#3737, parameters#3738], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@254b55d7,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) Scan ExistingRDD[location_id#817,name#818,lat#819,lon#820,borough#821,parameters#822]
 ,None)
 
 (37) Filter
-Input [2]: [location_id#3745, borough#3749]
-Condition : (isnotnull(borough#3749) AND isnotnull(location_id#3745))
+Input [2]: [location_id#3733, borough#3737]
+Condition : (isnotnull(borough#3737) AND isnotnull(location_id#3733))
 
 (38) BroadcastExchange
-Input [2]: [location_id#3745, borough#3749]
-Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=2196]
+Input [2]: [location_id#3733, borough#3737]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=2097]
 
 (39) BroadcastHashJoin
-Left keys [1]: [location_id#3736]
-Right keys [1]: [location_id#3745]
+Left keys [1]: [location_id#3724]
+Right keys [1]: [location_id#3733]
 Join type: Inner
 Join condition: None
 
 (40) Project
-Output [3]: [aqi#3584, borough#3749, month(date_local#3744) AS month#3616]
-Input [5]: [location_id#3736, date_local#3744, aqi#3584, location_id#3745, borough#3749]
+Output [3]: [aqi#3572, borough#3737, month(date_local#3732) AS month#3604]
+Input [5]: [location_id#3724, date_local#3732, aqi#3572, location_id#3733, borough#3737]
 
 (41) HashAggregate
-Input [3]: [aqi#3584, borough#3749, month#3616]
-Keys [2]: [borough#3749, month#3616]
-Functions [3]: [partial_avg(aqi#3584), partial_sum(CASE WHEN (aqi#3584 > 100) THEN 1 ELSE 0 END), partial_count(aqi#3584)]
-Aggregate Attributes [4]: [sum#4054, count#4055L, sum#4056L, count#4057L]
-Results [6]: [borough#3749, month#3616, sum#4058, count#4059L, sum#4060L, count#4061L]
+Input [3]: [aqi#3572, borough#3737, month#3604]
+Keys [2]: [borough#3737, month#3604]
+Functions [3]: [partial_avg(aqi#3572), partial_sum(CASE WHEN (aqi#3572 > 100) THEN 1 ELSE 0 END), partial_count(aqi#3572)]
+Aggregate Attributes [4]: [sum#4042, count#4043L, sum#4044L, count#4045L]
+Results [6]: [borough#3737, month#3604, sum#4046, count#4047L, sum#4048L, count#4049L]
 
 (42) Exchange
-Input [6]: [borough#3749, month#3616, sum#4058, count#4059L, sum#4060L, count#4061L]
-Arguments: hashpartitioning(borough#3749, month#3616, 200), ENSURE_REQUIREMENTS, [plan_id=2201]
+Input [6]: [borough#3737, month#3604, sum#4046, count#4047L, sum#4048L, count#4049L]
+Arguments: hashpartitioning(borough#3737, month#3604, 200), ENSURE_REQUIREMENTS, [plan_id=2102]
 
 (43) HashAggregate
-Input [6]: [borough#3749, month#3616, sum#4058, count#4059L, sum#4060L, count#4061L]
-Keys [2]: [borough#3749, month#3616]
-Functions [3]: [avg(aqi#3584), sum(CASE WHEN (aqi#3584 > 100) THEN 1 ELSE 0 END), count(aqi#3584)]
-Aggregate Attributes [3]: [avg(aqi#3584)#3696, sum(CASE WHEN (aqi#3584 > 100) THEN 1 ELSE 0 END)#3698L, count(aqi#3584)#3700L]
-Results [6]: [borough#3749, month AS grain#3707, month#3616 AS bucket#3685, avg(aqi#3584)#3696 AS aqi_avg#3697, sum(CASE WHEN (aqi#3584 > 100) THEN 1 ELSE 0 END)#3698L AS hours_over_100#3699L, count(aqi#3584)#3700L AS n_station_hours#3701L]
+Input [6]: [borough#3737, month#3604, sum#4046, count#4047L, sum#4048L, count#4049L]
+Keys [2]: [borough#3737, month#3604]
+Functions [3]: [avg(aqi#3572), sum(CASE WHEN (aqi#3572 > 100) THEN 1 ELSE 0 END), count(aqi#3572)]
+Aggregate Attributes [3]: [avg(aqi#3572)#3684, sum(CASE WHEN (aqi#3572 > 100) THEN 1 ELSE 0 END)#3686L, count(aqi#3572)#3688L]
+Results [6]: [borough#3737, month AS grain#3695, month#3604 AS bucket#3673, avg(aqi#3572)#3684 AS aqi_avg#3685, sum(CASE WHEN (aqi#3572 > 100) THEN 1 ELSE 0 END)#3686L AS hours_over_100#3687L, count(aqi#3572)#3688L AS n_station_hours#3689L]
 
 (44) Union
 
 (45) AdaptiveSparkPlan
-Output [6]: [borough#821, grain#3649, bucket#3627, aqi_avg#3639, hours_over_100#3641L, n_station_hours#3643L]
+Output [6]: [borough#821, grain#3637, bucket#3615, aqi_avg#3627, hours_over_100#3629L, n_station_hours#3631L]
 Arguments: isFinalPlan=false
 

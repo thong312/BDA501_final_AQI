@@ -140,7 +140,7 @@ Output [3]: [location_id#1, date_local#1038, aqi_daily#1895]
 Arguments: [location_id#1, date_local#1038, aqi_daily#1895], [isnotnull(location_id#1)]
 
 (2) InMemoryRelation
-Arguments: [location_id#1, date_local#1038, dominant_pollutant#1893, aqi_daily#1895, level#1901], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@5b0a0e84,StorageLevel(disk, memory, deserialized, 1 replicas),AdaptiveSparkPlan isFinalPlan=true
+Arguments: [location_id#1, date_local#1038, dominant_pollutant#1893, aqi_daily#1895, level#1901], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@254b55d7,StorageLevel(disk, memory, deserialized, 1 replicas),AdaptiveSparkPlan isFinalPlan=true
 +- == Final Plan ==
    *(8) Project [location_id#1, date_local#1038, dominant_pollutant#1893, aqi_daily#1895, pythonUDF0#2005 AS level#1901]
    +- ArrowEvalPython [level_name_udf(aqi_daily#1895)#1900], [pythonUDF0#2005], 200
@@ -264,7 +264,7 @@ Output [6]: [date_local#1038, hour_utc#985, location_id#1, parameter#3, units#10
 Arguments: [date_local#1038, hour_utc#985, location_id#1, parameter#3, units#1031, value_avg#1027]
 
 (4) InMemoryRelation
-Arguments: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, aqi_hourly#1056], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@5b0a0e84,StorageLevel(disk, memory, deserialized, 1 replicas),AdaptiveSparkPlan isFinalPlan=true
+Arguments: [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, aqi_hourly#1056], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@254b55d7,StorageLevel(disk, memory, deserialized, 1 replicas),AdaptiveSparkPlan isFinalPlan=true
 +- == Final Plan ==
    *(3) Project [location_id#1, parameter#3, hour_utc#985, value_avg#1027, n_readings#1029L, units#1031, date_local#1038, hour_local#1046, cast(pythonUDF0#1256 as int) AS aqi_hourly#1056]
    +- ArrowEvalPython [aqi_udf(parameter#3, value_avg#1027, units#1031, instant)#1055], [pythonUDF0#1256], 200
@@ -300,7 +300,7 @@ Output [5]: [event_time#9, location_id#1, parameter#3, units#4, value#5]
 Arguments: [event_time#9, location_id#1, parameter#3, units#4, value#5]
 
 (6) InMemoryRelation
-Arguments: [sensor_id#0, location_id#1, location_name#2, parameter#3, units#4, value#5, lat#6, lon#7, datetime_utc#8, event_time#9, datetime_local#10, hour_local#11, borough#12, quality_flag#13, ingested_at#14, source#15, year#16, month#17, date_local#18], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@5b0a0e84,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) ColumnarToRow
+Arguments: [sensor_id#0, location_id#1, location_name#2, parameter#3, units#4, value#5, lat#6, lon#7, datetime_utc#8, event_time#9, datetime_local#10, hour_local#11, borough#12, quality_flag#13, ingested_at#14, source#15, year#16, month#17, date_local#18], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@254b55d7,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) ColumnarToRow
 +- FileScan parquet [sensor_id#0,location_id#1,location_name#2,parameter#3,units#4,value#5,lat#6,lon#7,datetime_utc#8,event_time#9,datetime_local#10,hour_local#11,borough#12,quality_flag#13,ingested_at#14,source#15,year#16,month#17,date_local#18] Batched: true, DataFilters: [], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3a://aq-lake/silver/measurements/year=2026/month=9/date_local=2026-09..., PartitionFilters: [], PushedFilters: [], ReadSchema: struct<sensor_id:int,location_id:int,location_name:string,parameter:string,units:string,value:dou...
 ,None)
 
@@ -646,7 +646,7 @@ Output [2]: [location_id#817, borough#821]
 Arguments: [location_id#817, borough#821], [isnotnull(borough#821), isnotnull(location_id#817)]
 
 (83) InMemoryRelation
-Arguments: [location_id#817, name#818, lat#819, lon#820, borough#821, parameters#822], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@5b0a0e84,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) Scan ExistingRDD[location_id#817,name#818,lat#819,lon#820,borough#821,parameters#822]
+Arguments: [location_id#817, name#818, lat#819, lon#820, borough#821, parameters#822], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@254b55d7,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) Scan ExistingRDD[location_id#817,name#818,lat#819,lon#820,borough#821,parameters#822]
 ,None)
 
 (84) Scan ExistingRDD [codegen id : 1]
