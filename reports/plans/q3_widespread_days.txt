@@ -36,7 +36,7 @@ Output [2]: [borough#32, location_id#28]
 Arguments: [borough#32, location_id#28], [isnotnull(borough#32), isnotnull(location_id#28)]
 
 (4) InMemoryRelation
-Arguments: [location_id#28, name#29, lat#30, lon#31, borough#32, parameters#33], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@655777e4,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) ColumnarToRow
+Arguments: [location_id#28, name#29, lat#30, lon#31, borough#32, parameters#33], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@2eb2a809,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) ColumnarToRow
 +- FileScan parquet [location_id#28,name#29,lat#30,lon#31,borough#32,parameters#33] Batched: true, DataFilters: [], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3a://aq-lake/gold/dim_station], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<location_id:int,name:string,lat:double,lon:double,borough:string,parameters:array<string>>
 ,None)
 

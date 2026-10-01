@@ -1,0 +1,12 @@
+{
+  "date_from": "2026-09-30",
+  "date_to": "2026-09-30",
+  "bronze_rows": 1188,
+  "parsed_rows": 1188,
+  "in_date_range_and_bbox": 6,
+  "quality_flags": {
+    "STALE": 6
+  },
+  "after_quality_filter": 6,
+  "silver_rows_after_dedupe": 2
+}
