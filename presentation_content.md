@@ -79,7 +79,7 @@
 ## 06 — DATA QUALITY: Cleaning keeps 94% of records
 
 **Cleaning rules:**
-* Keep only NYC stations, tag each with its borough.
+* Tag each station with its NYC borough (point-in-polygon); the bbox also covers part of New Jersey, which analytics filter out (borough IS NULL).
 * Drop 8,150 negative or out-of-range readings.
 * Drop 57,776 duplicate readings.
 * *Spark and MapReduce share the same rule set.*
@@ -157,25 +157,25 @@ Sort
 
 ## 12 — MACHINE LEARNING: KMeans clustering of “pollution day types”
 
-* Each point: one station on one day.
+* Unit of clustering: one station on one day (11,762 station-days).
 * Features: mean AQI, max AQI, hours > 100, peak hour, fine-dust / ozone ratio.
 
 | Cluster | % of days | Mean AQI | Max AQI |
 | :--- | :--- | :--- | :--- |
-| Very clean day | 31.5% | 26.2 | 48.6 |
-| Clean day | 11.7% | 28.1 | 46.6 |
-| Moderate day | 27.6% | 28.5 | 52.4 |
-| Mildly polluted day | 26.2% | 59.3 | 87.1 |
-| **Heavily polluted day** | **3.0%** | **96.3** | **158.1** |
+| Clean — evening fine-dust peak (peak ~19:45) | 31.5% | 26.2 | 48.6 |
+| Clean — midday ozone peak (PM2.5/O3 ratio 0.10) | 11.7% | 28.1 | 46.6 |
+| Clean — early-morning fine-dust peak (peak ~05:09) | 27.6% | 28.5 | 52.4 |
+| Mildly polluted (mostly PM2.5) | 26.2% | 59.3 | 87.1 |
+| **Heavily polluted** | **3.0%** | **96.3** | **158.1** |
 
-*3% of days fall into the heavily polluted cluster (average max AQI 158) — the group that needs alerts; the dashboard attaches a recommendation to each cluster.*
+*3% of days fall into the heavily polluted cluster (average max AQI 158) — the group that needs alerts. The three clean clusters have similar AQI and differ by peak hour and pollutant mix.*
 
 ---
 
 ## 13 — SERVING: Getting results to users
 
 * **PostgreSQL:** Current AQI of every station, alert history, analytics results and KMeans clusters.
-* **Dashboard:** Map of NYC stations, AQI trends by borough, cluster profiles with recommendations.
+* **Dashboard:** Map of NYC stations, AQI trends by borough, cluster profiles (mean/max AQI, hours > 100, peak hour, PM2.5/O3 ratio).
 * **Notifier:** Receives borough-level alerts from Kafka, sends Telegram messages.
 
 ---
@@ -209,7 +209,7 @@ Sort
 *(Draft: roles inferred from git history — the team must confirm before presenting.)*
 
 * **Lê Công Huỳnh (H):** Docker infrastructure, Kafka, MinIO, PostgreSQL, Poller, Streaming Query A + B, Alert rules, AQI, MapReduce + verification, Notifier.
-* **Lý Minh Thông (T):** Batch pipeline run at 1-million-record scale, Spark SQL, KMeans, ML report, Flask dashboard + per-cluster recommendations, Performance experiment.
+* **Lý Minh Thông (T):** Batch pipeline run at 1-million-record scale, Spark SQL, KMeans, ML report, Flask dashboard, Performance experiment.
 * **Dương Thành Duy (D):** Dataset survey and selection, Architecture and cluster/cloud design, NoSQL serving design, Final report.
 
 ---
@@ -220,7 +220,7 @@ A working system, from API to alert.
 * **1.16M** Bronze records
 * **0 diff** MapReduce ↔ Spark
 * **0.499** KMeans silhouette, k = 5
-* **58** unit tests
+* **54** unit tests passing (1 skipped)
 
 **Thank you — questions are welcome!**
 

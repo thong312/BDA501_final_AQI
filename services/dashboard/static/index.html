@@ -248,10 +248,21 @@ function aqiBadgeClass(level) {
   if (l.includes('hazardous')) return 'badge-hazardous';
   return 'badge-unknown';
 }
+// Tên trạm/cụm đến từ OpenAQ và DB -> escape trước khi chèn vào innerHTML
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+// peak_hour là giờ trung bình (vd 12.4) -> 12:24
+function fmtHour(h) {
+  if (h == null) return '—';
+  const m = Math.round(h * 60);
+  return String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+}
+// Giờ hiển thị theo giờ New York (múi giờ của dữ liệu)
 function fmtTime(iso) {
   if (!iso) return '—';
   const d = new Date(iso);
-  return d.toLocaleString('vi-VN', {day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+  return d.toLocaleString('vi-VN', {timeZone:'America/New_York', day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) + ' NYC';
 
 }
 async function fetchJSON(path) {
@@ -284,7 +295,7 @@ let map;
 async function loadMap() {
   map = L.map('map', {zoomControl:true}).setView([40.7128, -74.006], 11);
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
-    attribution:'OpenStreetMap',maxZoom:19
+    attribution:'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',maxZoom:16
   }).addTo(map);
 
   const stations = await fetchJSON('/api/stations');
@@ -300,8 +311,8 @@ async function loadMap() {
     }).addTo(map);
     marker.bindPopup(`
       <div style="font-family:Inter,sans-serif;min-width:180px">
-        <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">${s.name || 'Station #' + s.location_id}</div>
-        <div style="color:#94a3b8;font-size:.8rem;margin-bottom:6px">${s.borough || 'Unknown Borough'}</div>
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">${esc(s.name || 'Station #' + s.location_id)}</div>
+        <div style="color:#94a3b8;font-size:.8rem;margin-bottom:6px">${esc(s.borough || 'Unknown Borough')}</div>
         <div style="display:flex;justify-content:space-between;font-size:.85rem">
           <span>AQI</span>
           <span style="font-weight:700;color:${color}">${aqi != null ? aqi : 'N/A'}</span>
@@ -331,7 +342,7 @@ async function loadTrends() {
   const data = await fetchJSON('/api/aqi_hourly?hours=168');
   const canvas = document.getElementById('aqi-chart');
   if (!data || data.length === 0) {
-    canvas.parentElement.innerHTML = '<div class=\"empty-state\"><div class=\"empty-icon\">??</div><p>Chua co du lieu AQI theo gio. Hay chay luong Streaming truoc!</p></div>';
+    canvas.parentElement.innerHTML = '<div class=\"empty-state\"><div class=\"empty-icon\">📈</div><p>Chua co du lieu AQI theo gio. Hay chay luong Streaming truoc!</p></div>';
     return;
   }
   const labels = [...new Set(data.map(d => d.bucket))].sort();
@@ -405,15 +416,15 @@ async function loadClusters() {
   data.forEach((c, i) => {
     html += '<div class="cluster-card" style="border-top:3px solid ' + clusterColors[i % clusterColors.length] + '">';
     html += '  <div class="cluster-header">';
-    html += '    <span class="cluster-name">' + (c.cluster_name || 'Cluster ' + c.cluster) + '</span>';
+    html += '    <span class="cluster-name">' + esc(c.cluster_name || 'Cluster ' + c.cluster) + '</span>';
     html += '    <span class="cluster-share">' + (c.share_of_days * 100).toFixed(1) + '%</span>';
     html += '  </div>';
-    html += '  <div class="cluster-desc" style="margin-bottom:10px;">' + (c.description || 'No description') + '</div>';
+    html += '  <div class="cluster-desc" style="margin-bottom:10px;">' + esc(c.description || 'No description') + '</div>';
     html += '  <div class="cluster-stats">';
     html += '    <div class="cluster-stat"><span class="stat-label">AQI Mean</span><span class="stat-value" style="color:' + aqiColor(c.aqi_mean) + '">' + c.aqi_mean + '</span></div>';
     html += '    <div class="cluster-stat"><span class="stat-label">AQI Max</span><span class="stat-value" style="color:' + aqiColor(c.aqi_max) + '">' + c.aqi_max + '</span></div>';
     html += '    <div class="cluster-stat"><span class="stat-label">Hours >100</span><span class="stat-value">' + c.hours_over_100 + 'h</span></div>';
-    html += '    <div class="cluster-stat"><span class="stat-label">Peak Hour</span><span class="stat-value">' + c.peak_hour + ':00</span></div>';
+    html += '    <div class="cluster-stat"><span class="stat-label">Peak Hour</span><span class="stat-value">' + fmtHour(c.peak_hour) + '</span></div>';
     html += '    <div class="cluster-stat"><span class="stat-label">PM2.5/O3</span><span class="stat-value">' + c.pm25_o3_ratio + '</span></div>';
     html += '  </div>';
     html += '  ';
@@ -438,7 +449,7 @@ async function loadDaily() {
       <td style="font-weight:700;color:${aqiColor(d.aqi_daily)}">${d.aqi_daily || '—'}</td>
       <td><span class="badge ${aqiBadgeClass(d.level)}">${d.level || '—'}</span></td>
       <td>${d.dominant_pollutant || '—'}</td>
-      <td>${d.cluster_name || '—'}</td>
+      <td>${esc(d.cluster_name || '—')}</td>
     </tr>`;
   });
   html += '</tbody></table>';

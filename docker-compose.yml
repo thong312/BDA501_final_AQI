@@ -5,7 +5,7 @@ x-spark-common: &spark-common
   image: aq-spark:3.5.3
   environment: &spark-env
     SPARK_NO_DAEMONIZE: "true"
-    # /opt/aq: code dÃ¡Â»Â± ÃƒÂ¡n; pyspark + py4j Ã„â€˜Ã¡Â»Æ’ chÃ¡ÂºÂ¡y pytest/python3 trÃ¡Â»Â±c tiÃ¡ÂºÂ¿p (spark-submit tÃ¡Â»Â± thÃƒÂªm)
+    # /opt/aq: code dự án; pyspark + py4j để chạy pytest/python3 trực tiếp (spark-submit tự thêm)
     PYTHONPATH: /opt/aq:/opt/spark/python:/opt/spark/python/lib/py4j-0.10.9.7-src.zip
     KAFKA_BOOTSTRAP: kafka:9092
     S3_ENDPOINT: http://minio:9000
@@ -29,7 +29,7 @@ services:
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      # PLAINTEXT cho cÃƒÂ¡c container trong mÃ¡ÂºÂ¡ng compose, PLAINTEXT_HOST cho mÃƒÂ¡y host (test, chÃ¡ÂºÂ¡y tay)
+      # PLAINTEXT cho các container trong mạng compose, PLAINTEXT_HOST cho máy host (test, chạy tay)
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
@@ -79,7 +79,7 @@ services:
     environment:
       <<: *spark-env
       SPARK_MASTER_HOST: spark-master
-      # MÃ¡Â»â€”i app mÃ¡ÂºÂ·c Ã„â€˜Ã¡Â»â€¹nh tÃ¡Â»â€˜i Ã„â€˜a 2/4 core Ã„â€˜Ã¡Â»Æ’ streaming vÃƒÂ  batch chÃ¡ÂºÂ¡y song song Ã„â€˜Ã†Â°Ã¡Â»Â£c
+      # Mỗi app mặc định tối đa 2/4 core để streaming và batch chạy song song được
       SPARK_MASTER_OPTS: "-Dspark.deploy.defaultCores=2"
 
   spark-worker-1:
@@ -104,8 +104,8 @@ services:
       SPARK_WORKER_MEMORY: 2G
       SPARK_WORKER_CORES: "2"
 
-  # Docker Hub/quay.io khÃƒÂ´ng cÃƒÂ²n phÃƒÂ¡t hÃƒÂ nh image MinIO chÃƒÂ­nh thÃ¡Â»Â©c; dÃƒÂ¹ng bÃ¡ÂºÂ£n Bitnami lÃ†Â°u trÃ¡Â»Â¯ (ghim phiÃƒÂªn bÃ¡ÂºÂ£n).
-  # MINIO_DEFAULT_BUCKETS tÃ¡ÂºÂ¡o sÃ¡ÂºÂµn bucket khi khÃ¡Â»Å¸i Ã„â€˜Ã¡Â»â„¢ng.
+  # Docker Hub/quay.io không còn phát hành image MinIO chính thức; dùng bản Bitnami lưu trữ (ghim phiên bản).
+  # MINIO_DEFAULT_BUCKETS tạo sẵn bucket khi khởi động.
   minio:
     image: bitnamilegacy/minio:2024.6.13
     container_name: minio
@@ -160,7 +160,6 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
 
-
   dashboard:
     build:
       context: .
@@ -177,4 +176,3 @@ services:
 volumes:
   minio-data:
   pg-data:
-
