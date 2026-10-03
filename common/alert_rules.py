@@ -1,15 +1,15 @@
-"""Bộ luật cảnh báo (ARCHITECTURE mục 8) — hàm thuần, không phụ thuộc Spark.
+"""Bo luat canh bao (ARCHITECTURE muc 8) — ham thuan, khong phu thuoc Spark.
 
-Dùng cho cả cấp trạm và cấp vùng. State là dict với các khoá:
-    alerted_level    mức đã báo gần nhất (0..5, -1 = UNKNOWN)
-    candidate_level  mức đang chờ xác nhận (None nếu không có)
-    candidate_count  số lần đo liên tiếp thoả candidate
-    last_event_time  datetime của bản đo mới nhất đã xét
-    last_alert_at    event_time của alert gần nhất
-    last_alert_level mức của alert gần nhất (phục vụ cooldown)
+Dung cho ca cap tram va cap vung. State la dict voi cac khoa:
+    alerted_level    muc da bao gan nhat (0..5, -1 = UNKNOWN)
+    candidate_level  muc dang cho xac nhan (None neu khong co)
+    candidate_count  so lan do lien tiep thoa candidate
+    last_event_time  datetime cua ban do moi nhat da xet
+    last_alert_at    event_time cua alert gan nhat
+    last_alert_level muc cua alert gan nhat (phuc vu cooldown)
 
-Alert trả về là dict: type, level, prev_level, aqi, event_time (datetime).
-Caller bổ sung alert_id, scope, borough, trigger_location_id, dominant_pollutant.
+Alert tra ve la dict: type, level, prev_level, aqi, event_time (datetime).
+Caller bo sung alert_id, scope, borough, trigger_location_id, dominant_pollutant.
 """
 from datetime import datetime, timezone
 from typing import Optional, Tuple
@@ -40,7 +40,7 @@ def _alert(alert_type, level, prev_level, aqi, event_time):
 
 
 def _in_cooldown(state, level, event_time, cfg) -> bool:
-    """Luật 6: không phát lại cùng mức trong COOLDOWN_SEC."""
+    """Luat 6: khong phat lai cung muc trong COOLDOWN_SEC."""
     last_at = to_datetime(state.get("last_alert_at"))
     if last_at is None or state.get("last_alert_level") != level:
         return False
@@ -48,7 +48,7 @@ def _in_cooldown(state, level, event_time, cfg) -> bool:
 
 
 def _emit(state, alert_type, level, prev_level, aqi, event_time, cfg):
-    """Tạo alert (nếu không bị cooldown chặn) và ghi nhận vào state."""
+    """Tao alert (neu khong bi cooldown chan) va ghi nhan vao state."""
     if _in_cooldown(state, level, event_time, cfg):
         return None
     state["last_alert_at"] = event_time
@@ -63,19 +63,19 @@ def _reset_candidate(state):
 
 def decide(state: dict, aqi, event_time, level: Optional[int] = None,
            cfg: Optional[dict] = None) -> Tuple[dict, Optional[dict]]:
-    """Áp luật 1–6 cho một quan sát mới.
+    """Ap luat 1–6 cho mot quan sat moi.
 
-    aqi:   AQI quan sát (cấp trạm: station_aqi).
-    level: mức quan sát nếu đã biết trước (cấp vùng: max alerted_level các trạm).
-           Khi truyền level, mức đó đã qua hysteresis ở cấp trạm nên luật 5 chỉ còn
-           yêu cầu xác nhận CONFIRM_N lần.
+    aqi:   AQI quan sat (cap tram: station_aqi).
+    level: muc quan sat neu da biet truoc (cap vung: max alerted_level cac tram).
+           Khi truyen level, muc do da qua hysteresis o cap tram nen luat 5 chi con
+           yeu cau xac nhan CONFIRM_N lan.
     """
     cfg = cfg or CONFIG
     if aqi is None and level is None:
         return state, None
     ev = to_datetime(event_time)
 
-    # Luật 1: chỉ xét dữ liệu mới hơn bản đo cuối
+    # Luat 1: chi xet du lieu moi hon ban do cuoi
     last = to_datetime(state.get("last_event_time"))
     if last is not None and ev <= last:
         return state, None
@@ -98,7 +98,7 @@ def decide(state: dict, aqi, event_time, level: Optional[int] = None,
     base = 0 if was_unknown else cur
     alert_min, urgent_min, confirm_n = cfg["ALERT_MIN_LEVEL"], cfg["URGENT_MIN_LEVEL"], cfg["CONFIRM_N"]
 
-    # Có dữ liệu trở lại sau UNKNOWN mà mức dưới ngưỡng: cập nhật lặng lẽ (luật 7: không RECOVERED)
+    # Co du lieu tro lai sau UNKNOWN ma muc duoi nguong: cap nhat lang le (luat 7: khong RECOVERED)
     if was_unknown and obs < alert_min:
         s["alerted_level"] = obs
         _reset_candidate(s)
@@ -106,16 +106,16 @@ def decide(state: dict, aqi, event_time, level: Optional[int] = None,
 
     if obs > base or (was_unknown and obs >= alert_min):
         if obs < alert_min:
-            # Luật 2: Good -> Moderate chỉ cập nhật state
+            # Luat 2: Good -> Moderate chi cap nhat state
             s["alerted_level"] = obs
             _reset_candidate(s)
             return s, None
         if obs >= urgent_min:
-            # Luật 4: >= Unhealthy báo ngay, nhảy nhiều mức báo mức cao nhất
+            # Luat 4: >= Unhealthy bao ngay, nhay nhieu muc bao muc cao nhat
             s["alerted_level"] = obs
             _reset_candidate(s)
             return s, _emit(s, "ESCALATE", obs, cur, aqi, ev, cfg)
-        # Luật 3: lên USG cần CONFIRM_N lần đo liên tiếp
+        # Luat 3: len USG can CONFIRM_N lan do lien tiep
         if s["candidate_level"] == obs:
             s["candidate_count"] += 1
         else:
@@ -128,18 +128,18 @@ def decide(state: dict, aqi, event_time, level: Optional[int] = None,
 
     if obs < cur:
         if cur < alert_min:
-            # Moderate -> Good: chỉ cập nhật state
+            # Moderate -> Good: chi cap nhat state
             s["alerted_level"] = obs
             _reset_candidate(s)
             return s, None
-        # Luật 5: hysteresis — AQI phải <= ngưỡng dưới của mức hiện tại − HYST
+        # Luat 5: hysteresis — AQI phai <= nguong duoi cua muc hien tai − HYST
         passed = True if level is not None else aqi <= LEVEL_LOWER_AQI[cur] - cfg["HYST"]
         if not passed:
             _reset_candidate(s)
             return s, None
         cand = s["candidate_level"]
         if cand is not None and cand < cur:
-            # Chuỗi giảm liên tiếp: hạ về mức cao nhất đã thấy trong chuỗi (thận trọng)
+            # Chuoi giam lien tiep: ha ve muc cao nhat da thay trong chuoi (than trong)
             s["candidate_level"] = max(cand, obs)
             s["candidate_count"] += 1
         else:
@@ -150,18 +150,18 @@ def decide(state: dict, aqi, event_time, level: Optional[int] = None,
             _reset_candidate(s)
             if new_level < alert_min:
                 return s, _emit(s, "RECOVERED", new_level, cur, aqi, ev, cfg)
-            # Giảm giữa các mức >= USG: chỉ cập nhật state
+            # Giam giua cac muc >= USG: chi cap nhat state
         return s, None
 
-    # Cùng mức với mức đã báo: chuỗi candidate bị ngắt
+    # Cung muc voi muc da bao: chuoi candidate bi ngat
     _reset_candidate(s)
     return s, None
 
 
 def check_timeout(state: dict, now, cfg: Optional[dict] = None) -> Tuple[dict, Optional[dict]]:
-    """Luật 7: đang >= USG mà quá STALE_TIMEOUT_SEC không có dữ liệu -> UNKNOWN, không RECOVERED.
+    """Luat 7: dang >= USG ma qua STALE_TIMEOUT_SEC khong co du lieu -> UNKNOWN, khong RECOVERED.
 
-    event_time của alert = last_event_time để alert_id tất định khi replay.
+    event_time cua alert = last_event_time de alert_id tat dinh khi replay.
     """
     cfg = cfg or CONFIG
     cur = state.get("alerted_level")

@@ -1,18 +1,18 @@
-"""MapReduce thống kê ngày từ Bronze để đối chiếu độc lập với Spark (ARCHITECTURE 6.4).
+"""MapReduce thong ke ngay tu Bronze de doi chieu doc lap voi Spark (ARCHITECTURE 6.4).
 
-Áp CÙNG quy tắc với Spark làm sạch (common/geo.py, common/quality.py):
-  - lọc bbox NYC
-  - bỏ NO_METADATA / NEGATIVE / OUT_OF_RANGE (STALE được giữ như Spark)
-  - ngày theo giờ New York, tính từ datetime_utc
-  - dedupe theo (sensor_id, datetime_utc), giữ bản ingested_at mới nhất
+Ap CUNG quy tac voi Spark lam sach (common/geo.py, common/quality.py):
+  - loc bbox NYC
+  - bo NO_METADATA / NEGATIVE / OUT_OF_RANGE (STALE duoc giu nhu Spark)
+  - ngay theo gio New York, tinh tu datetime_utc
+  - dedupe theo (sensor_id, datetime_utc), giu ban ingested_at moi nhat
 
 Key    = [location_id, parameter, date_local]
 Value  = [sensor_id, datetime_utc, ingested_at, offset, value, units]
 Output = {count, sum, max, avg, hours_over_threshold}
 
-KHÔNG dùng combiner: combiner cộng dồn cục bộ trước khi dedupe, nên hai bản trùng
-(sensor_id, datetime_utc) nằm ở hai mapper khác nhau sẽ đều được cộng vào sum/count -> sai.
-Reducer cần thấy toàn bộ bản ghi gốc của một key để dedupe trước khi tổng hợp.
+KHONG dung combiner: combiner cong don cuc bo truoc khi dedupe, nen hai ban trung
+(sensor_id, datetime_utc) nam o hai mapper khac nhau se deu duoc cong vao sum/count -> sai.
+Reducer can thay toan bo ban ghi goc cua mot key de dedupe truoc khi tong hop.
 """
 import json
 import os
@@ -41,7 +41,7 @@ def date_local_of(datetime_utc: str):
 
 
 def map_record(line: str, lookup: dict, bbox: str, target_date: str = None):
-    """Hàm thuần của mapper: một dòng Bronze -> (key, value) hoặc None."""
+    """Ham thuan cua mapper: mot dong Bronze -> (key, value) hoac None."""
     try:
         row = json.loads(line)
         data = json.loads(row["value"])
@@ -58,7 +58,7 @@ def map_record(line: str, lookup: dict, bbox: str, target_date: str = None):
         lat, lon = meta.get("lat"), meta.get("lon")
     if not in_bbox(lat, lon, bbox):
         return None
-    # Giống from_json của Spark: chỉ nhận số JSON, còn lại -> null -> NEGATIVE
+    # Giong from_json cua Spark: chi nhan so JSON, con lai -> null -> NEGATIVE
     raw_value = data.get("value")
     value = float(raw_value) if isinstance(raw_value, (int, float)) and not isinstance(raw_value, bool) else None
     if quality_flag(parameter, units, value) in BATCH_DROP_FLAGS:
@@ -76,7 +76,7 @@ def map_record(line: str, lookup: dict, bbox: str, target_date: str = None):
 
 
 def reduce_values(key, values):
-    """Hàm thuần của reducer: dedupe rồi tính thống kê."""
+    """Ham thuan cua reducer: dedupe roi tinh thong ke."""
     latest = {}
     for sensor_id, dt_utc, ingested_at, offset, value, units in values:
         rank = (ingested_at, offset, value)
@@ -102,10 +102,10 @@ class DailyStatsMR(MRJob):
     def configure_args(self):
         super().configure_args()
         self.add_file_arg("--lookup", help="validation/sensor_lookup.json (JSON Lines)")
-        self.add_passthru_arg("--date", default=None, help="Chỉ giữ date_local này (YYYY-MM-DD)")
+        self.add_passthru_arg("--date", default=None, help="Chi giu date_local nay (YYYY-MM-DD)")
 
     def mapper_init(self):
-        # bbox lấy từ env như các thành phần khác (giá trị bắt đầu bằng '-' không truyền được qua argv)
+        # bbox lay tu env nhu cac thanh phan khac (gia tri bat dau bang '-' khong truyen duoc qua argv)
         self.bbox = os.getenv("NYC_BBOX", DEFAULT_BBOX)
         self.lookup = {}
         if self.options.lookup:

@@ -1,4 +1,4 @@
-"""Tạo SparkSession dùng chung (S3A tới MinIO, session timezone UTC)."""
+"""Tao SparkSession dung chung (S3A toi MinIO, session timezone UTC)."""
 import os
 
 from pyspark.sql import SparkSession
@@ -13,7 +13,7 @@ def create_spark_session(app_name: str, conf: dict = None) -> SparkSession:
                .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
                .config("spark.hadoop.fs.s3a.connection.ssl.enabled",
                        str(os.getenv("S3_ENDPOINT", "http://").startswith("https")).lower())
-               # Mọi timestamp xử lý ở UTC; giờ New York tính tường minh bằng from_utc_timestamp
+               # Moi timestamp xu ly o UTC; gio New York tinh tuong minh bang from_utc_timestamp
                .config("spark.sql.session.timeZone", "UTC"))
     for key, value in (conf or {}).items():
         builder = builder.config(key, value)
@@ -23,7 +23,7 @@ def create_spark_session(app_name: str, conf: dict = None) -> SparkSession:
 
 
 def explain_string(df, mode: str = "formatted") -> str:
-    """Nội dung df.explain(mode) dưới dạng chuỗi để lưu vào reports/plans/."""
+    """Noi dung df.explain(mode) duoi dang chuoi de luu vao reports/plans/."""
     return df._sc._jvm.PythonSQLUtils.explainString(df._jdf.queryExecution(), mode)
 
 
@@ -33,7 +33,7 @@ def _fs_path(spark, path):
 
 
 def existing_paths(spark, paths):
-    """Lọc các path/glob có dữ liệu. Trả (danh sách path, tổng bytes)."""
+    """Loc cac path/glob co du lieu. Tra (danh sach path, tong bytes)."""
     found, total = [], 0
     for p in paths:
         fs, jpath = _fs_path(spark, p)
@@ -51,7 +51,7 @@ def path_size(spark, path) -> int:
 
 
 def write_text(spark, path: str, text: str):
-    """Ghi một file text duy nhất (không phải thư mục part-*) lên S3/HDFS."""
+    """Ghi mot file text duy nhat (khong phai thu muc part-*) len S3/HDFS."""
     fs, jpath = _fs_path(spark, path)
     out = fs.create(jpath, True)
     try:
@@ -61,7 +61,7 @@ def write_text(spark, path: str, text: str):
 
 
 def read_sensor_metadata(spark, bootstrap: str):
-    """Topic compacted aq.openaq.sensors.v1 -> bản mới nhất mỗi sensor (theo offset), bỏ tombstone."""
+    """Topic compacted aq.openaq.sensors.v1 -> ban moi nhat moi sensor (theo offset), bo tombstone."""
     from pyspark.sql import Window
     from pyspark.sql import functions as F
 

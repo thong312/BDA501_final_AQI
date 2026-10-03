@@ -23,10 +23,10 @@ def test_transform_backfill(spark):
     ], COLS)
     rows = transform_backfill(df, "-74.26,40.49,-73.70,40.92", date(2024, 1, 1), date(2024, 12, 31),
                               ingested_at="2026-09-27T00:00:00Z").collect()
-    assert len(rows) == 1  # ngoài bbox và ngoài khoảng ngày bị loại
+    assert len(rows) == 1  # ngoai bbox va ngoai khoang ngay bi loai
     row = rows[0]
     assert row["topic"] == "aq.openaq.measurements.v1"
-    assert str(row["ingest_date"]) == "2024-07-02"  # ngày UTC của bản đo
+    assert str(row["ingest_date"]) == "2024-07-02"  # ngay UTC cua ban do
     rec = json.loads(row["value"])
     assert rec["datetime_utc"] == "2024-07-02T02:00:00Z"
     assert rec["datetime_local"] == "2024-07-01T22:00:00-04:00"

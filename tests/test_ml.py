@@ -10,8 +10,8 @@ SCHEMA = ("location_id int, aqi_mean double, aqi_max double, hours_over_100 int,
 def test_kmeans_selects_k_and_denormalizes(spark):
     rows = []
     for i in range(6):
-        rows.append((100 + i, 30.0 + i, 45.0 + i, 0, 8, 0.8))      # ngày sạch
-        rows.append((200 + i, 150.0 + i, 190.0 + i, 12, 15, 0.3))  # ngày ô nhiễm
+        rows.append((100 + i, 30.0 + i, 45.0 + i, 0, 8, 0.8))      # ngay sach
+        rows.append((200 + i, 150.0 + i, 190.0 + i, 12, 15, 0.3))  # ngay o nhiem
     df = spark.createDataFrame(rows, SCHEMA)
     res = train_and_evaluate_kmeans(df, FEATURES, k_range=[2, 3])
     assert [s["k"] for s in res["scores"]] == [2, 3]
@@ -22,5 +22,5 @@ def test_kmeans_selects_k_and_denormalizes(spark):
 
 def test_name_clusters_by_aqi_rank():
     centers = [[150.0, 0, 0, 0, 0], [30.0, 0, 0, 0, 0]]
-    cfg = {"names_by_k": {2: [{"name": "Sạch"}, {"name": "Ô nhiễm"}]}}
-    assert name_clusters(centers, FEATURES, cfg) == {1: ("Sạch", ""), 0: ("Ô nhiễm", "")}
+    cfg = {"names_by_k": {2: [{"name": "Sach"}, {"name": "O nhiem"}]}}
+    assert name_clusters(centers, FEATURES, cfg) == {1: ("Sach", ""), 0: ("O nhiem", "")}

@@ -1,6 +1,6 @@
-"""Chuẩn hoá response OpenAQ v3 sang message Kafka (hàm thuần, dễ unit test).
+"""Chuan hoa response OpenAQ v3 sang message Kafka (ham thuan, de unit test).
 
-Poller không tính AQI và không lọc giá trị âm — đó là việc của Spark.
+Poller khong tinh AQI va khong loc gia tri am — do la viec cua Spark.
 """
 from __future__ import annotations
 
@@ -17,7 +17,7 @@ def utc_now_str() -> str:
 
 
 def parse_sensor_metadata(raw_location: dict, now: str = None) -> list[Sensor]:
-    """Một location OpenAQ -> mỗi sensor một message."""
+    """Mot location OpenAQ -> moi sensor mot message."""
     now = now or utc_now_str()
     coords = raw_location.get("coordinates") or {}
     sensors = []
@@ -40,7 +40,7 @@ def parse_sensor_metadata(raw_location: dict, now: str = None) -> list[Sensor]:
 
 
 def _error_code(err: ValidationError) -> str:
-    """Mã lỗi ngắn cho DLQ, ví dụ value_not_numeric, missing_sensor_id."""
+    """Ma loi ngan cho DLQ, vi du value_not_numeric, missing_sensor_id."""
     first = err.errors()[0]
     field = first["loc"][0] if first["loc"] else "payload"
     if first["type"] == "missing" or first.get("input", "") is None:
@@ -52,7 +52,7 @@ def _error_code(err: ValidationError) -> str:
 
 def parse_measurements(raw_results: list, location_id: int, lat, lon, endpoint: str,
                        now: str = None) -> tuple[list[Measurement], list[DLQMessage]]:
-    """Kết quả /v3/locations/{id}/latest -> (bản đo hợp lệ, bản ghi DLQ)."""
+    """Ket qua /v3/locations/{id}/latest -> (ban do hop le, ban ghi DLQ)."""
     now = now or utc_now_str()
     ok_list, dlq_list = [], []
     for item in raw_results:

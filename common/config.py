@@ -1,4 +1,4 @@
-"""Đường dẫn và hằng số cấu hình dùng chung (ARCHITECTURE mục 11)."""
+"""Duong dan va hang so cau hinh dung chung (ARCHITECTURE muc 11)."""
 import os
 from pathlib import Path
 

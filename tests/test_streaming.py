@@ -1,4 +1,4 @@
-"""Test Spark của Query A (chạy trong container: make test-spark)."""
+"""Test Spark cua Query A (chay trong container: make test-spark)."""
 import sys
 from datetime import datetime
 from pathlib import Path

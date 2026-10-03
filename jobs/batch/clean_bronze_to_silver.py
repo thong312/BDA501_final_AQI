@@ -1,11 +1,11 @@
 """Bronze -> Silver (ARCHITECTURE 6.5).
 
-Một ngày New York D gồm các bản đo có datetime_utc trong [D 04:00Z/05:00Z, D+1 04:00Z/05:00Z), nên
-đọc Bronze ingest_date D và D+1 rồi lọc theo date_local. Ghi đè đúng partition date_local
-(dynamic overwrite) nên chạy lại cùng ngày cho kết quả như nhau.
+Mot ngay New York D gom cac ban do co datetime_utc trong [D 04:00Z/05:00Z, D+1 04:00Z/05:00Z), nen
+doc Bronze ingest_date D va D+1 roi loc theo date_local. Ghi de dung partition date_local
+(dynamic overwrite) nen chay lai cung ngay cho ket qua nhu nhau.
 
-Chạy:  clean_bronze_to_silver.py --date 2026-09-26
-       clean_bronze_to_silver.py --from 2024-01-01 --to 2024-12-31   (xử lý lại lịch sử)
+Chay:  clean_bronze_to_silver.py --date 2026-09-26
+       clean_bronze_to_silver.py --from 2024-01-01 --to 2024-12-31   (xu ly lai lich su)
 """
 import argparse
 import json
@@ -63,7 +63,7 @@ def prepare_metadata(df_meta: DataFrame) -> DataFrame:
 
 
 def borough_lookup(df: DataFrame) -> DataFrame:
-    """(location_id, lat, lon) ít -> gán borough trên driver bằng shapely, trả DataFrame nhỏ để broadcast."""
+    """(location_id, lat, lon) it -> gan borough tren driver bang shapely, tra DataFrame nho de broadcast."""
     spark = df.sparkSession
     rows = df.select("location_id", "lat", "lon").distinct().collect()
     data = [(r.location_id, r.lat, r.lon, get_borough(r.lat, r.lon)) for r in rows]
@@ -73,11 +73,11 @@ def borough_lookup(df: DataFrame) -> DataFrame:
 
 def transform_silver(df_parsed: DataFrame, df_meta: DataFrame, bbox_str: str,
                      date_from: date = None, date_to: date = None, stats: dict = None):
-    """Hàm thuần: join metadata, lọc bbox, quality_flag, dedupe, thêm cột thời gian địa phương + borough."""
+    """Ham thuan: join metadata, loc bbox, quality_flag, dedupe, them cot thoi gian dia phuong + borough."""
     stats = stats if stats is not None else {}
     min_lon, min_lat, max_lon, max_lat = parse_bbox(bbox_str)
 
-    # 1. Metadata cho bản ghi streaming (backfill đã có sẵn parameter/units/location_name)
+    # 1. Metadata cho ban ghi streaming (backfill da co san parameter/units/location_name)
     df = (df_parsed.join(F.broadcast(df_meta), "sensor_id", "left")
           .withColumn("parameter", F.coalesce("parameter", "meta_parameter"))
           .withColumn("units", F.coalesce("units", "meta_units"))
@@ -86,7 +86,7 @@ def transform_silver(df_parsed: DataFrame, df_meta: DataFrame, bbox_str: str,
           .withColumn("lon", F.coalesce("lon", "meta_lon"))
           .drop("meta_parameter", "meta_units", "meta_location_name", "meta_lat", "meta_lon"))
 
-    # 2. Thời gian: UTC chuẩn hoá + giờ New York tường minh
+    # 2. Thoi gian: UTC chuan hoa + gio New York tuong minh
     df = (df.withColumn("event_time", F.to_timestamp("datetime_utc"))
           .filter(F.col("event_time").isNotNull())
           .withColumn("ts_local", F.from_utc_timestamp("event_time", TIMEZONE))
@@ -96,23 +96,23 @@ def transform_silver(df_parsed: DataFrame, df_meta: DataFrame, bbox_str: str,
     if date_from is not None:
         df = df.filter(F.col("date_local").between(F.lit(date_from), F.lit(date_to or date_from)))
 
-    # 3. Lọc bbox NYC
+    # 3. Loc bbox NYC
     df = df.filter(F.col("lat").between(min_lat, max_lat) & F.col("lon").between(min_lon, max_lon))
 
-    # 4. Quality flag (cùng luật với Streaming/MapReduce); batch giữ STALE.
-    #    STALE chỉ có nghĩa với dữ liệu realtime: ingested_at của backfill là lúc chạy backfill.
+    # 4. Quality flag (cung luat voi Streaming/MapReduce); batch giu STALE.
+    #    STALE chi co nghia voi du lieu realtime: ingested_at cua backfill la luc chay backfill.
     reference_ts = F.when(F.col("source") != "openaq-archive", F.to_timestamp("ingested_at"))
     df = df.withColumn("quality_flag", spark_quality_flag(
         F.col("parameter"), F.col("units"), F.col("value"), F.col("event_time"), reference_ts))
     stats["flagged"] = df
     df = df.filter(~F.col("quality_flag").isin(*BATCH_DROP_FLAGS))
 
-    # 5. Dedupe (sensor_id, datetime_utc), giữ bản ingested_at mới nhất
+    # 5. Dedupe (sensor_id, datetime_utc), giu ban ingested_at moi nhat
     w = Window.partitionBy("sensor_id", "event_time").orderBy(
         F.col("ingested_at").desc_nulls_last(), F.col("kafka_offset").desc(), F.col("value").desc())
     df = df.withColumn("rn", F.row_number().over(w)).filter("rn = 1").drop("rn")
 
-    # 6. Borough + cột partition
+    # 6. Borough + cot partition
     boroughs = borough_lookup(df)
     df = (df.join(F.broadcast(boroughs), ["location_id", "lat", "lon"], "left")
           .withColumn("year", F.year("date_local"))
@@ -121,7 +121,7 @@ def transform_silver(df_parsed: DataFrame, df_meta: DataFrame, bbox_str: str,
 
 
 def bronze_paths(date_from: date, date_to: date):
-    days = (date_to - date_from).days + 2  # thêm D+1
+    days = (date_to - date_from).days + 2  # them D+1
     return [f"{BRONZE_PATH}ingest_date={date_from + timedelta(days=i)}" for i in range(days)]
 
 
@@ -136,7 +136,7 @@ def main():
     elif args.date_from and args.date_to:
         date_from, date_to = date.fromisoformat(args.date_from), date.fromisoformat(args.date_to)
     else:
-        parser.error("cần --date hoặc --from/--to")
+        parser.error("can --date hoac --from/--to")
 
     spark = create_spark_session("AQ_Clean_Bronze_to_Silver",
                                  conf={"spark.sql.sources.partitionOverwriteMode": "dynamic"})
@@ -145,14 +145,14 @@ def main():
     try:
         df_meta = prepare_metadata(read_sensor_metadata(spark, os.getenv("KAFKA_BOOTSTRAP", "kafka:9092"))).cache()
         logger.info("Metadata: %d sensors", df_meta.count())
-    except Exception as e:  # Kafka không sẵn sàng: bản ghi streaming sẽ bị NO_METADATA
-        logger.warning("Không đọc được metadata từ Kafka (%s); tiếp tục không có metadata", e)
+    except Exception as e:  # Kafka khong san sang: ban ghi streaming se bi NO_METADATA
+        logger.warning("Khong doc duoc metadata tu Kafka (%s); tiep tuc khong co metadata", e)
         df_meta = prepare_metadata(spark.createDataFrame(
             [], "sensor_id int, parameter string, units string, location_name string, lat double, lon double"))
 
     paths, _ = existing_paths(spark, bronze_paths(date_from, date_to))
     if not paths:
-        logger.warning("Không có Bronze cho %s..%s", date_from, date_to)
+        logger.warning("Khong co Bronze cho %s..%s", date_from, date_to)
         return
     df_bronze = spark.read.schema(BRONZE_STRUCT).json(paths)
     df_parsed = parse_bronze(df_bronze).cache()
@@ -160,7 +160,7 @@ def main():
     stats = {}
     df_silver = transform_silver(df_parsed, df_meta, bbox, date_from, date_to, stats).cache()
 
-    # Báo cáo data quality: số dòng trước/sau từng bước
+    # Bao cao data quality: so dong truoc/sau tung buoc
     report = {"date_from": str(date_from), "date_to": str(date_to),
               "bronze_rows": df_bronze.count(), "parsed_rows": df_parsed.count()}
     flag_counts = {r["quality_flag"]: r["count"] for r in stats["flagged"].groupBy("quality_flag").count().collect()}
@@ -175,15 +175,15 @@ def main():
     (report_dir / f"{name}.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
 
     if report["silver_rows_after_dedupe"] == 0:
-        logger.warning("Không có dữ liệu hợp lệ để ghi Silver.")
+        logger.warning("Khong co du lieu hop le de ghi Silver.")
         return
 
-    # Compact: mỗi partition ngày một file; chỉ ghi đè các ngày có trong lần chạy này
+    # Compact: moi partition ngay mot file; chi ghi de cac ngay co trong lan chay nay
     (df_silver.repartition("year", "month", "date_local").write
      .mode("overwrite").partitionBy("year", "month", "date_local").parquet(SILVER_PATH))
-    logger.info("Đã ghi Silver: %s", SILVER_PATH)
+    logger.info("Da ghi Silver: %s", SILVER_PATH)
 
-    # Bảng tra sensor -> parameter/units cho MapReduce (một file JSON Lines)
+    # Bang tra sensor -> parameter/units cho MapReduce (mot file JSON Lines)
     lookup = (df_meta.select("sensor_id", F.col("meta_parameter").alias("parameter"),
                              F.col("meta_units").alias("units"))
               .unionByName(df_silver.select("sensor_id", "parameter", "units"))
@@ -191,7 +191,7 @@ def main():
               .dropDuplicates(["sensor_id"]).collect())
     write_text(spark, f"{VALIDATION_PATH}sensor_lookup.json",
                "".join(json.dumps(r.asDict(), ensure_ascii=False) + "\n" for r in lookup))
-    logger.info("Đã xuất %d sensor vào %ssensor_lookup.json", len(lookup), VALIDATION_PATH)
+    logger.info("Da xuat %d sensor vao %ssensor_lookup.json", len(lookup), VALIDATION_PATH)
 
 
 if __name__ == "__main__":

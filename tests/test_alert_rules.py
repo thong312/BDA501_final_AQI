@@ -1,4 +1,4 @@
-"""Unit test bắt buộc của ARCHITECTURE mục 8."""
+"""Unit test bat buoc cua ARCHITECTURE muc 8."""
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -11,7 +11,7 @@ T0 = datetime(2026, 9, 26, 10, 0, tzinfo=timezone.utc)
 
 
 def run(aqis, state=None, step_min=15):
-    """Chạy một chuỗi AQI, trả về state cuối và danh sách (aqi, alert)."""
+    """Chay mot chuoi AQI, tra ve state cuoi va danh sach (aqi, alert)."""
     state = state or {}
     out = []
     for i, aqi in enumerate(aqis):
@@ -26,7 +26,7 @@ def types(alerts):
 
 def test_rising_through_thresholds():
     state, alerts = run([40, 80, 120, 130, 160])
-    # 120 lần 1 chưa báo, 130 xác nhận USG, 160 báo ngay UNHEALTHY
+    # 120 lan 1 chua bao, 130 xac nhan USG, 160 bao ngay UNHEALTHY
     assert types(alerts) == [None, None, None, "ESCALATE", "ESCALATE"]
     assert alerts[3]["level"] == "USG" and alerts[3]["prev_level"] == "MODERATE"
     assert alerts[4]["level"] == "UNHEALTHY"
@@ -50,7 +50,7 @@ def test_jump_multiple_levels_reports_highest():
 
 
 def test_drop_to_95_is_not_recovered():
-    # USG, ngưỡng dưới 101 - HYST 10 = 91 -> 95 nằm trong vùng hysteresis
+    # USG, nguong duoi 101 - HYST 10 = 91 -> 95 nam trong vung hysteresis
     state, alerts = run([120, 120, 95, 95, 95])
     assert types(alerts) == [None, "ESCALATE", None, None, None]
     assert state["alerted_level"] == 2
@@ -73,7 +73,7 @@ def test_late_reading_is_ignored():
     before = dict(state)
     state, alert = decide(state, 20, T0 - timedelta(hours=1))
     assert alert is None and state == before
-    state, alert = decide(state, 20, T0)  # trùng event_time cũng bị bỏ
+    state, alert = decide(state, 20, T0)  # trung event_time cung bi bo
     assert alert is None and state == before
 
 
@@ -91,7 +91,7 @@ def test_missing_data_3h_goes_unknown():
     s3, alert = check_timeout(state, T0 + timedelta(hours=3, minutes=1))
     assert alert["type"] == "UNKNOWN" and alert["prev_level"] == "UNHEALTHY"
     assert s3["alerted_level"] == -1
-    # Dữ liệu quay lại ở mức thấp: không gửi RECOVERED
+    # Du lieu quay lai o muc thap: khong gui RECOVERED
     s4, alert = decide(s3, 30, T0 + timedelta(hours=4))
     assert alert is None and s4["alerted_level"] == 0
 
@@ -103,12 +103,12 @@ def test_timeout_ignored_below_usg():
 
 
 def test_cooldown_blocks_same_level_but_not_escalation():
-    # UNHEALTHY -> hạ về USG (lặng lẽ) -> lại UNHEALTHY trong 1h: không báo lại;
-    # lên VERY_UNHEALTHY là tăng mức mới nên vẫn báo ngay
+    # UNHEALTHY -> ha ve USG (lang le) -> lai UNHEALTHY trong 1h: khong bao lai;
+    # len VERY_UNHEALTHY la tang muc moi nen van bao ngay
     state, alerts = run([160, 120, 120, 160, 210], step_min=5)
     assert types(alerts) == ["ESCALATE", None, None, None, "ESCALATE"]
     assert alerts[4]["level"] == "VERY_UNHEALTHY"
-    # Sau cooldown (alert UNHEALTHY cuối lúc T0) thì báo lại được
+    # Sau cooldown (alert UNHEALTHY cuoi luc T0) thi bao lai duoc
     state = {"alerted_level": 2, "last_event_time": T0 + timedelta(minutes=90),
              "last_alert_at": T0, "last_alert_level": 3}
     _, alert = decide(state, 160, T0 + timedelta(minutes=95))
