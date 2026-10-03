@@ -1,4 +1,4 @@
-# Demo canh bao realtime cho buoi trinh bay. KHONG xoa checkpoint, KHONG tat poller:
+# Demo canh bao realtime cho buoi trinh bay: gia lap luong streaming (OpenAQ API chi co gia tri theo gio). KHONG xoa checkpoint, KHONG tat poller:
 # state canh bao nam trong PostgreSQL (realtime.station_status / region_status), xoa checkpoint
 # khong reset duoc gi ma con lam Query A bo qua cac batch Bronze da commit.
 $ErrorActionPreference = "Stop"
@@ -18,14 +18,11 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "Streaming dang chay, bo qua." -ForegroundColor Cyan
 }
 
-Write-Host ">>> BUOC 3: BOM DU LIEU GIA LAP VAO KAFKA (sensor PM2.5 that, AQI ~275)..." -ForegroundColor Green
-docker exec -w /opt/aq spark-master python3 scripts/inject_test_measurements.py
-if ($LASTEXITCODE -ne 0) { throw "inject that bai (borough dang canh bao? chay voi --recover truoc)" }
-
-Write-Host "Doi 75 giay cho 1 trigger cua Query B..." -ForegroundColor Cyan
-Start-Sleep -Seconds 75
+Write-Host ">>> BUOC 3: GIA LAP LUONG STREAMING 10 PHUT (3 sensor PM2.5 that, event_time = bay gio)..." -ForegroundColor Green
+Write-Host "Mo Dashboard http://localhost:5050 va Telegram; Ctrl+C de dung som." -ForegroundColor Cyan
+docker exec -it -w /opt/aq spark-master python3 scripts/inject_from_csv.py --minutes 10
 docker exec postgres psql -U aq_user -d aq -c "SELECT scope, borough, level, prev_level, type, event_time FROM realtime.alerts ORDER BY created_at DESC LIMIT 6"
 
 Write-Host ">>> HOAN TAT! Xem Telegram / 'docker logs notifier' va Dashboard http://localhost:5050" -ForegroundColor Red
-Write-Host "Replay (khong sinh canh bao trung): docker exec -w /opt/aq spark-master python3 scripts/inject_test_measurements.py --at <event_time> --pm25 <gia tri> (in o buoc 3)"
+Write-Host "Ban 1 lan (khong lien tuc):       docker exec -w /opt/aq spark-master python3 scripts/inject_test_measurements.py"
 Write-Host "Dua ve Good de tap lai:           docker exec -w /opt/aq spark-master python3 scripts/inject_test_measurements.py --recover"

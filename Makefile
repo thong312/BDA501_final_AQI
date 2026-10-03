@@ -1,4 +1,4 @@
-.PHONY: env build up down reset test test-spark streaming backfill batch clean-silver mapreduce gold validate analytics perf demo-alert demo-replay demo-recover
+.PHONY: env build up down reset test test-spark streaming backfill batch clean-silver mapreduce gold validate analytics perf demo-alert demo-replay demo-recover demo-stream
 
 DATE ?= $(shell date -d yesterday +%F 2>/dev/null || date -v-1d +%F)
 PACKAGES = org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3,org.apache.hadoop:hadoop-aws:3.3.4,org.postgresql:postgresql:42.7.3
@@ -71,3 +71,8 @@ demo-replay:
 
 demo-recover:
 	docker exec -w /opt/aq spark-master python3 scripts/inject_test_measurements.py --recover
+
+# Giả lập luồng streaming liên tục (OpenAQ API chỉ có giá trị theo giờ): MINUTES phút, rồi tự về Good
+MINUTES ?= 10
+demo-stream:
+	docker exec -it -w /opt/aq spark-master python3 scripts/inject_from_csv.py --minutes $(MINUTES)

@@ -1,4 +1,4 @@
-sensor_id,location_id,value,pollutant
-25520,8749,450.5,pm25
-1102,626,380.2,pm25
-14904963,6166696,500.0,pm25
+sensor_id,location_id,low,high,phase
+1102,626,6,170,0.0
+25520,8749,8,90,0.33
+14904963,6166696,5,48,0.66

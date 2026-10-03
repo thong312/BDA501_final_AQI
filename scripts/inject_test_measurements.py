@@ -172,14 +172,16 @@ def fmt(t):
     return t.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
-def send(rows, now):
+def send(rows, now, source=SOURCE, quiet=False):
     """rows: (sensor_id, location_id, value, event_time); key Kafka = location_id như poller."""
     p = Producer({"bootstrap.servers": BOOTSTRAP})
     for sid, loc, v, t in rows:
         m = {"sensor_id": sid, "location_id": loc, "value": v, "datetime_utc": fmt(t),
-             "ingested_at": fmt(now), "source": SOURCE}
+             "ingested_at": fmt(now), "source": source}
         p.produce(TOPIC_MEASUREMENTS, key=str(loc).encode(), value=json.dumps(m).encode())
-    print(f"sent {len(rows)} messages, event_time {fmt(now)}, undelivered {p.flush(10)}")
+    undelivered = p.flush(10)
+    if undelivered or not quiet:
+        print(f"sent {len(rows)} messages, event_time {fmt(now)}, undelivered {undelivered}")
 
 if __name__ == "__main__":
     main()
