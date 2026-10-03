@@ -1,113 +1,154 @@
-import os
+"""Backfill một lần từ OpenAQ S3 archive vào Bronze (ARCHITECTURE 6.3).
+
+Nguồn: s3://openaq-data-archive/records/csv.gz/locationid={id}/year={yyyy}/month={mm}/*.csv.gz
+Cột:   location_id, sensors_id, location, datetime, lat, lon, parameter, units, value
+       (datetime là giờ địa phương kèm offset, ví dụ 2024-07-01T10:00:00-04:00)
+
+Ghi vào cùng thư mục Bronze, cùng dạng bản ghi Kafka của Query A (value = chuỗi JSON theo schema 5.1),
+thêm parameter/units/location_name và source="openaq-archive".
+ingest_date của backfill = ngày UTC của bản đo, để job làm sạch theo ngày đọc được đúng partition.
+
+Chạy:
+  make backfill                                        # dùng BACKFILL_FROM/BACKFILL_TO trong env
+  spark-submit ... backfill_archive.py --from 2024-01-01 --to 2024-12-31 [--locations 2178,1234]
+  spark-submit ... backfill_archive.py --input tests/fixtures/archive_sample.csv   # file cục bộ
+"""
 import argparse
 import logging
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, lit, to_date, struct, to_json, expr
+import os
+import sys
+from datetime import date, datetime, timezone
+from pathlib import Path
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-def transform_backfill(df, bbox_str):
-    """
-    Hàm thuần xử lý DataFrame backfill:
-    - Lọc dữ liệu trong Bounding Box của NYC.
-    - Ép kiểu và đổi tên các cột sang chuẩn schema 5.1.
-    - Thêm thông tin tĩnh: parameter, units, location_name, source="openaq-archive".
-    - Đóng gói dữ liệu về dạng chuỗi JSON `value` giống cấu trúc của topic Kafka ở M4 để ghi vào chung thư mục Bronze.
-    """
-    parts = bbox_str.split(',')
-    min_lon, min_lat, max_lon, max_lat = float(parts[0]), float(parts[1]), float(parts[2]), float(parts[3])
-    
-    # 1. Lọc bbox
-    df_filtered = df.filter(
-        (col("lat") >= min_lat) & (col("lat") <= max_lat) &
-        (col("lon") >= min_lon) & (col("lon") <= max_lon)
+from pyspark.sql import DataFrame
+from pyspark.sql import functions as F
+
+from common.config import BRONZE_PATH, DEFAULT_BBOX, TOPIC_MEASUREMENTS
+from common.geo import parse_bbox
+from common.spark_utils import create_spark_session, existing_paths, path_size, read_sensor_metadata
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger("backfill")
+
+ARCHIVE_BUCKET = "openaq-data-archive"
+ARCHIVE_ROOT = f"s3a://{ARCHIVE_BUCKET}/records/csv.gz"
+TS_FMT = "yyyy-MM-dd'T'HH:mm:ss'Z'"
+
+ARCHIVE_CONF = {
+    # Bucket công khai trên AWS: truy cập ẩn danh, endpoint riêng cho bucket này (MinIO giữ nguyên)
+    f"spark.hadoop.fs.s3a.bucket.{ARCHIVE_BUCKET}.endpoint": "s3.us-east-1.amazonaws.com",
+    f"spark.hadoop.fs.s3a.bucket.{ARCHIVE_BUCKET}.endpoint.region": "us-east-1",
+    f"spark.hadoop.fs.s3a.bucket.{ARCHIVE_BUCKET}.path.style.access": "false",
+    f"spark.hadoop.fs.s3a.bucket.{ARCHIVE_BUCKET}.connection.ssl.enabled": "true",
+    f"spark.hadoop.fs.s3a.bucket.{ARCHIVE_BUCKET}.aws.credentials.provider":
+        "org.apache.hadoop.fs.s3a.AnonymousAWSCredentialsProvider",
+}
+
+
+def month_range(start: date, end: date):
+    y, m = start.year, start.month
+    while (y, m) <= (end.year, end.month):
+        yield y, m
+        y, m = (y + 1, 1) if m == 12 else (y, m + 1)
+
+
+def archive_paths(location_ids, start: date, end: date):
+    return [f"{ARCHIVE_ROOT}/locationid={loc}/year={y}/month={m:02d}/*.csv.gz"
+            for loc in sorted(location_ids) for y, m in month_range(start, end)]
+
+
+def transform_backfill(df: DataFrame, bbox_str: str, start: date = None, end: date = None,
+                       ingested_at: str = None) -> DataFrame:
+    """Hàm thuần: lọc bbox + khoảng ngày, map sang bản ghi Bronze."""
+    min_lon, min_lat, max_lon, max_lat = parse_bbox(bbox_str)
+    ingested_at = ingested_at or datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    lat, lon = F.col("lat").cast("double"), F.col("lon").cast("double")
+    event_ts = F.to_timestamp(F.col("datetime").cast("string"))  # offset trong chuỗi -> UTC
+    df = (df.withColumn("event_ts", event_ts)
+          .filter(lat.between(min_lat, max_lat) & lon.between(min_lon, max_lon))
+          .filter(F.col("event_ts").isNotNull()))
+    if start is not None:
+        df = df.filter(F.to_date("event_ts") >= F.lit(start))
+    if end is not None:
+        df = df.filter(F.to_date("event_ts") <= F.lit(end))
+
+    record = F.struct(
+        F.col("sensors_id").cast("int").alias("sensor_id"),
+        F.col("location_id").cast("int").alias("location_id"),
+        F.col("value").cast("double").alias("value"),
+        F.date_format("event_ts", TS_FMT).alias("datetime_utc"),
+        F.col("datetime").cast("string").alias("datetime_local"),
+        lat.alias("lat"),
+        lon.alias("lon"),
+        F.lit(ingested_at).alias("ingested_at"),
+        F.lit("openaq-archive").alias("source"),
+        F.col("parameter").cast("string").alias("parameter"),
+        F.col("units").cast("string").alias("units"),
+        F.col("location").cast("string").alias("location_name"),
     )
-    
-    # 2. Chuẩn hoá schema
-    df_mapped = df_filtered.select(
-        col("sensors_id").cast("int").alias("sensor_id"),
-        col("location_id").cast("int").alias("location_id"),
-        col("value").cast("double").alias("value"),
-        col("datetime").cast("string").alias("datetime_utc"),
-        col("datetime").cast("string").alias("datetime_local"),
-        col("lat").cast("double").alias("lat"),
-        col("lon").cast("double").alias("lon"),
-        col("datetime").cast("string").alias("ingested_at"),
-        lit("openaq-archive").alias("source"),
-        col("parameter").cast("string").alias("parameter"),
-        col("units").cast("string").alias("units"),
-        col("location").cast("string").alias("location_name")
+    return df.select(
+        F.to_json(record).alias("value"),
+        F.lit(TOPIC_MEASUREMENTS).alias("topic"),
+        F.lit(-1).alias("partition"),       # -1: không đến từ Kafka
+        F.lit(0).cast("long").alias("offset"),
+        F.col("event_ts").alias("timestamp"),
+        F.to_date("event_ts").alias("ingest_date"),
     )
-    
-    # 3. Tạo ingest_date để partition thư mục
-    df_mapped = df_mapped.withColumn("ingest_date", to_date(col("datetime_utc")))
-    
-    # 4. Gói dữ liệu thô vào JSON bên trong cột `value` giống cấu trúc M4
-    df_bronze = df_mapped.select(
-        to_json(struct(
-            col("sensor_id"), col("location_id"), col("value").alias("val_tmp"), # rename tạm để tránh lặp tên `value` ngoài
-            col("datetime_utc"), col("datetime_local"),
-            col("lat"), col("lon"), col("ingested_at"), col("source"),
-            col("parameter"), col("units"), col("location_name")
-        )).alias("value"),
-        lit("aq.openaq.measurements.v1").alias("topic"),
-        lit(0).alias("partition"),
-        lit(0).cast("long").alias("offset"),
-        col("datetime_utc").cast("timestamp").alias("timestamp"),
-        col("ingest_date")
-    )
-    
-    # Thay thế chuỗi JSON val_tmp về value cho đúng cấu trúc
-    df_bronze = df_bronze.withColumn("value", expr("regexp_replace(value, '\"val_tmp\"', '\"value\"')"))
-    
-    return df_bronze
 
-def create_spark_session():
-    S3_ENDPOINT = os.getenv("S3_ENDPOINT", "http://localhost:4566")
-    S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY", "test")
-    S3_SECRET_KEY = os.getenv("S3_SECRET_KEY", "test")
-    
-    return (SparkSession.builder
-            .appName("AQ_Backfill")
-            .config("spark.hadoop.fs.s3a.endpoint", S3_ENDPOINT)
-            .config("spark.hadoop.fs.s3a.access.key", S3_ACCESS_KEY)
-            .config("spark.hadoop.fs.s3a.secret.key", S3_SECRET_KEY)
-            .config("spark.hadoop.fs.s3a.path.style.access", "true")
-            .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
-            .getOrCreate())
 
-if __name__ == "__main__":
+def nyc_location_ids(spark, bootstrap: str):
+    rows = read_sensor_metadata(spark, bootstrap).select("location_id").distinct().collect()
+    return [r.location_id for r in rows if r.location_id is not None]
+
+
+def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=str, required=True, help="Đường dẫn file CSV input từ S3/local")
+    parser.add_argument("--from", dest="date_from", default=os.getenv("BACKFILL_FROM"))
+    parser.add_argument("--to", dest="date_to", default=os.getenv("BACKFILL_TO"))
+    parser.add_argument("--locations", help="Danh sách location_id, mặc định lấy từ topic metadata")
+    parser.add_argument("--input", help="Đọc file/glob CSV cụ thể thay cho archive (thử nghiệm)")
     args = parser.parse_args()
 
-    BBOX = os.getenv("NYC_BBOX", "-74.26,40.49,-73.70,40.92")
-    OUTPUT_PATH = "s3a://aq-lake/bronze/openaq/measurements/"
-    
-    spark = create_spark_session()
-    spark.sparkContext.setLogLevel("WARN")
-    
-    logger.info(f"Bắt đầu đọc dữ liệu từ: {args.input}")
-    
-    df_raw = spark.read.csv(args.input, header=True, inferSchema=True)
-    count_raw = df_raw.count()
-    logger.info(f"Tổng số dòng đọc ban đầu (trước lọc): {count_raw}")
-    
-    df_transformed = transform_backfill(df_raw, BBOX)
-    df_transformed.cache()
-    
-    count_filtered = df_transformed.count()
-    logger.info(f"Tổng số dòng sau khi lọc Bounding Box NYC: {count_filtered}")
-    
-    if count_filtered > 0:
-        logger.info(f"Đang ghi xuống Bronze Data Lake tại {OUTPUT_PATH} ...")
-        df_transformed.write \
-            .format("json") \
-            .option("compression", "gzip") \
-            .partitionBy("ingest_date") \
-            .mode("append") \
-            .save(OUTPUT_PATH)
-        logger.info("Hoàn thành quá trình Backfill!")
+    bbox = os.getenv("NYC_BBOX", DEFAULT_BBOX)
+    spark = create_spark_session("AQ_Backfill", conf=ARCHIVE_CONF)
+    start = date.fromisoformat(args.date_from) if args.date_from else None
+    end = date.fromisoformat(args.date_to) if args.date_to else None
+
+    if args.input:
+        paths, in_bytes = existing_paths(spark, [args.input])
     else:
-        logger.warning("Không có dữ liệu nào khớp với Bounding Box, không ghi.")
+        if not (start and end):
+            parser.error("cần --from/--to (hoặc BACKFILL_FROM/BACKFILL_TO) khi đọc archive")
+        if args.locations:
+            locations = [int(x) for x in args.locations.split(",")]
+        else:
+            locations = nyc_location_ids(spark, os.getenv("KAFKA_BOOTSTRAP", "kafka:9092"))
+        logger.info("Backfill %s -> %s cho %d location NYC", start, end, len(locations))
+        paths, in_bytes = existing_paths(spark, archive_paths(locations, start, end))
+    if not paths:
+        logger.warning("Không tìm thấy file archive nào, dừng.")
+        return
+
+    raw = spark.read.option("header", True).csv(paths)
+    n_read = raw.count()
+    bronze = transform_backfill(raw, bbox, start, end).cache()
+    n_kept = bronze.count()
+    logger.info("Đọc %d dòng (%.1f MB csv.gz), sau lọc bbox/ngày còn %d dòng",
+                n_read, in_bytes / 1e6, n_kept)
+
+    if n_kept == 0:
+        logger.warning("Không có dòng nào sau lọc, không ghi.")
+        return
+    size_before = path_size(spark, BRONZE_PATH)
+    (bronze.repartition("ingest_date").write
+     .format("json").option("compression", "gzip")
+     .partitionBy("ingest_date").mode("append").save(BRONZE_PATH))
+    logger.info("Đã ghi %d dòng vào %s, dung lượng tăng %.1f MB",
+                n_kept, BRONZE_PATH, (path_size(spark, BRONZE_PATH) - size_before) / 1e6)
+
+
+if __name__ == "__main__":
+    main()

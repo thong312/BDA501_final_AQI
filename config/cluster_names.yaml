@@ -1,8 +1,38 @@
-cluster_0: "Ngày rất trong lành"
-cluster_1: "Ngày ô nhiễm nhẹ"
-cluster_2: "Ngày ô nhiễm trung bình"
-cluster_3: "Ngày cực kỳ ô nhiễm"
-cluster_4: "Bất thường cục bộ"
-cluster_5: "Dông lốc cát"
-cluster_6: "Cháy rừng"
-cluster_7: "Không xác định"
+# Tên cụm KMeans, gán theo thứ hạng aqi_mean của tâm cụm (hạng 0 = aqi_mean thấp nhất).
+# Chỉ số cụm của KMeans không ổn định giữa các lần chạy nên không đặt tên theo chỉ số.
+# Quy trình: chạy analytics.py -> xem reports/ml/cluster_centers.csv -> sửa tên/mô tả dưới đây
+# cho khớp tâm cụm thực tế -> chạy lại analytics.py.
+names_by_k:
+  2:
+    - {name: "Ngày trong lành", description: "AQI thấp cả ngày"}
+    - {name: "Ngày ô nhiễm", description: "AQI cao, có giờ vượt 100"}
+  3:
+    - {name: "Ngày trong lành", description: "AQI thấp cả ngày"}
+    - {name: "Ngày trung bình", description: "AQI mức Moderate"}
+    - {name: "Ngày ô nhiễm", description: "AQI cao, nhiều giờ vượt 100"}
+  4:
+    - {name: "Ngày trong lành", description: "AQI thấp cả ngày"}
+    - {name: "Ngày trung bình, bụi mịn trội", description: "Moderate, PM2.5 chi phối"}
+    - {name: "Ngày ozone buổi chiều", description: "Đỉnh AQI buổi chiều, O3 chi phối"}
+    - {name: "Ngày ô nhiễm diện rộng", description: "AQI cao, nhiều giờ vượt 100 (ví dụ khói cháy rừng)"}
+  5:
+    - {name: "Trong lành (bụi chập tối)", description: "AQI thấp, bụi mịn cao lúc chập tối"}
+    - {name: "Trong lành (Ozone trưa)", description: "AQI thấp, đỉnh Ozone buổi trưa"}
+    - {name: "Trong lành (bụi rạng sáng)", description: "AQI thấp, bụi mịn cao lúc rạng sáng"}
+    - {name: "Ô nhiễm nhẹ", description: "AQI mức vừa, chủ yếu do bụi mịn"}
+    - {name: "Ô nhiễm nặng", description: "Nhiều giờ vượt ngưỡng 100"}
+  6:
+    - {name: "Ngày rất trong lành", description: "AQI rất thấp"}
+    - {name: "Ngày trong lành", description: "AQI thấp"}
+    - {name: "Ngày trung bình", description: "AQI mức Moderate"}
+    - {name: "Ngày ô nhiễm nhẹ", description: "Có vài giờ vượt 100"}
+    - {name: "Ngày ô nhiễm", description: "Nhiều giờ vượt 100"}
+    - {name: "Sự kiện ô nhiễm cực đoan", description: "AQI rất cao"}
+  7:
+    - {name: "Ngày rất trong lành", description: "AQI rất thấp"}
+    - {name: "Ngày trong lành", description: "AQI thấp"}
+    - {name: "Ngày trung bình thấp", description: "Moderate thấp"}
+    - {name: "Ngày trung bình cao", description: "Moderate cao"}
+    - {name: "Ngày ô nhiễm nhẹ", description: "Có vài giờ vượt 100"}
+    - {name: "Ngày ô nhiễm", description: "Nhiều giờ vượt 100"}
+    - {name: "Sự kiện ô nhiễm cực đoan", description: "AQI rất cao"}

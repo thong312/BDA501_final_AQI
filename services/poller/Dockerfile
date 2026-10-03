@@ -10,4 +10,4 @@ COPY common/ common/
 COPY services/poller/ services/poller/
 
 ENV PYTHONPATH=/app
-CMD ["python", "services/poller/main.py"]
+CMD ["python", "-m", "services.poller.main"]

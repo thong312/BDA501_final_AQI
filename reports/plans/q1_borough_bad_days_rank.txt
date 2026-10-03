@@ -1,0 +1,137 @@
+== Physical Plan ==
+AdaptiveSparkPlan (23)
++- Sort (22)
+   +- Exchange (21)
+      +- Window (20)
+         +- Sort (19)
+            +- Exchange (18)
+               +- HashAggregate (17)
+                  +- Exchange (16)
+                     +- HashAggregate (15)
+                        +- HashAggregate (14)
+                           +- Exchange (13)
+                              +- HashAggregate (12)
+                                 +- Project (11)
+                                    +- BroadcastHashJoin Inner BuildRight (10)
+                                       :- Project (3)
+                                       :  +- Filter (2)
+                                       :     +- Scan parquet  (1)
+                                       +- BroadcastExchange (9)
+                                          +- Filter (8)
+                                             +- InMemoryTableScan (4)
+                                                   +- InMemoryRelation (5)
+                                                         +- * ColumnarToRow (7)
+                                                            +- Scan parquet  (6)
+
+
+(1) Scan parquet 
+Output [3]: [location_id#0, aqi_daily#2, date_local#4]
+Batched: true
+Location: InMemoryFileIndex [s3a://aq-lake/gold/fact_daily_aqi]
+PushedFilters: [IsNotNull(aqi_daily), GreaterThan(aqi_daily,100), IsNotNull(location_id)]
+ReadSchema: struct<location_id:int,aqi_daily:int>
+
+(2) Filter
+Input [3]: [location_id#0, aqi_daily#2, date_local#4]
+Condition : ((isnotnull(aqi_daily#2) AND (aqi_daily#2 > 100)) AND isnotnull(location_id#0))
+
+(3) Project
+Output [2]: [location_id#0, date_local#4]
+Input [3]: [location_id#0, aqi_daily#2, date_local#4]
+
+(4) InMemoryTableScan
+Output [2]: [location_id#28, borough#32]
+Arguments: [location_id#28, borough#32], [isnotnull(borough#32), isnotnull(location_id#28)]
+
+(5) InMemoryRelation
+Arguments: [location_id#28, name#29, lat#30, lon#31, borough#32, parameters#33], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@7b5417b0,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) ColumnarToRow
++- FileScan parquet [location_id#28,name#29,lat#30,lon#31,borough#32,parameters#33] Batched: true, DataFilters: [], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3a://aq-lake/gold/dim_station], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<location_id:int,name:string,lat:double,lon:double,borough:string,parameters:array<string>>
+,None)
+
+(6) Scan parquet 
+Output [6]: [location_id#28, name#29, lat#30, lon#31, borough#32, parameters#33]
+Batched: true
+Location: InMemoryFileIndex [s3a://aq-lake/gold/dim_station]
+ReadSchema: struct<location_id:int,name:string,lat:double,lon:double,borough:string,parameters:array<string>>
+
+(7) ColumnarToRow [codegen id : 1]
+Input [6]: [location_id#28, name#29, lat#30, lon#31, borough#32, parameters#33]
+
+(8) Filter
+Input [2]: [location_id#28, borough#32]
+Condition : (isnotnull(borough#32) AND isnotnull(location_id#28))
+
+(9) BroadcastExchange
+Input [2]: [location_id#28, borough#32]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=73]
+
+(10) BroadcastHashJoin
+Left keys [1]: [location_id#0]
+Right keys [1]: [location_id#28]
+Join type: Inner
+Join condition: None
+
+(11) Project
+Output [3]: [date_local#4, borough#32, year(date_local#4) AS _groupingexpression#219]
+Input [4]: [location_id#0, date_local#4, location_id#28, borough#32]
+
+(12) HashAggregate
+Input [3]: [date_local#4, borough#32, _groupingexpression#219]
+Keys [3]: [borough#32, _groupingexpression#219, date_local#4]
+Functions: []
+Aggregate Attributes: []
+Results [3]: [borough#32, _groupingexpression#219, date_local#4]
+
+(13) Exchange
+Input [3]: [borough#32, _groupingexpression#219, date_local#4]
+Arguments: hashpartitioning(borough#32, _groupingexpression#219, date_local#4, 200), ENSURE_REQUIREMENTS, [plan_id=78]
+
+(14) HashAggregate
+Input [3]: [borough#32, _groupingexpression#219, date_local#4]
+Keys [3]: [borough#32, _groupingexpression#219, date_local#4]
+Functions: []
+Aggregate Attributes: []
+Results [3]: [borough#32, _groupingexpression#219, date_local#4]
+
+(15) HashAggregate
+Input [3]: [borough#32, _groupingexpression#219, date_local#4]
+Keys [2]: [borough#32, _groupingexpression#219]
+Functions [1]: [partial_count(distinct date_local#4)]
+Aggregate Attributes [1]: [count(date_local#4)#144L]
+Results [3]: [borough#32, _groupingexpression#219, count#252L]
+
+(16) Exchange
+Input [3]: [borough#32, _groupingexpression#219, count#252L]
+Arguments: hashpartitioning(borough#32, _groupingexpression#219, 200), ENSURE_REQUIREMENTS, [plan_id=82]
+
+(17) HashAggregate
+Input [3]: [borough#32, _groupingexpression#219, count#252L]
+Keys [2]: [borough#32, _groupingexpression#219]
+Functions [1]: [count(distinct date_local#4)]
+Aggregate Attributes [1]: [count(date_local#4)#144L]
+Results [3]: [_groupingexpression#219 AS year#136, borough#32, count(date_local#4)#144L AS bad_days#137L]
+
+(18) Exchange
+Input [3]: [year#136, borough#32, bad_days#137L]
+Arguments: hashpartitioning(year#136, 200), ENSURE_REQUIREMENTS, [plan_id=85]
+
+(19) Sort
+Input [3]: [year#136, borough#32, bad_days#137L]
+Arguments: [year#136 ASC NULLS FIRST, bad_days#137L DESC NULLS LAST], false, 0
+
+(20) Window
+Input [3]: [year#136, borough#32, bad_days#137L]
+Arguments: [rank(bad_days#137L) windowspecdefinition(year#136, bad_days#137L DESC NULLS LAST, specifiedwindowframe(RowFrame, unboundedpreceding$(), currentrow$())) AS rank#135], [year#136], [bad_days#137L DESC NULLS LAST]
+
+(21) Exchange
+Input [4]: [year#136, borough#32, bad_days#137L, rank#135]
+Arguments: rangepartitioning(year#136 ASC NULLS FIRST, rank#135 ASC NULLS FIRST, 200), ENSURE_REQUIREMENTS, [plan_id=89]
+
+(22) Sort
+Input [4]: [year#136, borough#32, bad_days#137L, rank#135]
+Arguments: [year#136 ASC NULLS FIRST, rank#135 ASC NULLS FIRST], true, 0
+
+(23) AdaptiveSparkPlan
+Output [4]: [year#136, borough#32, bad_days#137L, rank#135]
+Arguments: isFinalPlan=false
+

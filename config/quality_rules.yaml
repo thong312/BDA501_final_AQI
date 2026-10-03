@@ -1,9 +1,29 @@
-pm25:
-  min: 0.0
-  max: 1000.0
-o3:
-  min: 0.0
-  max: 5.0
-no2:
-  min: 0.0
-  max: 1000.0
+# Ngưỡng hợp lệ theo (parameter, đơn vị đã chuẩn hoá: ug/m3, ppm, ppb, mg/m3).
+# Dùng chung cho Streaming query B, Spark làm sạch và MapReduce (common/quality.py).
+#   min/max:   ngoài khoảng -> OUT_OF_RANGE
+#   threshold: nồng độ ứng với AQI 100 (bắt đầu mức USG) — dùng cho hours_over_threshold
+# Cặp (parameter, units) không có trong file: chỉ kiểm tra giá trị âm, không có threshold.
+
+STALE_SEC: 10800   # bản đo cũ hơn 3h -> STALE
+
+rules:
+  pm25:
+    ug/m3: {min: 0, max: 1000, threshold: 35.4}
+  pm10:
+    ug/m3: {min: 0, max: 2000, threshold: 154}
+  o3:
+    ppm:   {min: 0, max: 1.0, threshold: 0.070}
+    ppb:   {min: 0, max: 1000, threshold: 70}
+    ug/m3: {min: 0, max: 2000, threshold: 137}
+  no2:
+    ppm:   {min: 0, max: 2.0, threshold: 0.100}
+    ppb:   {min: 0, max: 2000, threshold: 100}
+    ug/m3: {min: 0, max: 4000, threshold: 188}
+  so2:
+    ppm:   {min: 0, max: 2.0, threshold: 0.075}
+    ppb:   {min: 0, max: 2000, threshold: 75}
+    ug/m3: {min: 0, max: 5000, threshold: 196}
+  co:
+    ppm:   {min: 0, max: 100, threshold: 9.4}
+    ppb:   {min: 0, max: 100000, threshold: 9400}
+    ug/m3: {min: 0, max: 120000, threshold: 10800}

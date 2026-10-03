@@ -1,0 +1,111 @@
+== Physical Plan ==
+AdaptiveSparkPlan (19)
++- Sort (18)
+   +- Exchange (17)
+      +- Project (16)
+         +- Filter (15)
+            +- HashAggregate (14)
+               +- Exchange (13)
+                  +- HashAggregate (12)
+                     +- Project (11)
+                        +- BroadcastHashJoin Inner BuildRight (10)
+                           :- Filter (2)
+                           :  +- Scan parquet  (1)
+                           +- BroadcastExchange (9)
+                              +- Project (8)
+                                 +- Filter (7)
+                                    +- InMemoryTableScan (3)
+                                          +- InMemoryRelation (4)
+                                                +- * ColumnarToRow (6)
+                                                   +- Scan parquet  (5)
+
+
+(1) Scan parquet 
+Output [3]: [location_id#0, aqi_daily#2, date_local#4]
+Batched: true
+Location: InMemoryFileIndex [s3a://aq-lake/gold/fact_daily_aqi]
+PushedFilters: [IsNotNull(location_id)]
+ReadSchema: struct<location_id:int,aqi_daily:int>
+
+(2) Filter
+Input [3]: [location_id#0, aqi_daily#2, date_local#4]
+Condition : isnotnull(location_id#0)
+
+(3) InMemoryTableScan
+Output [2]: [borough#32, location_id#28]
+Arguments: [borough#32, location_id#28], [isnotnull(borough#32), isnotnull(location_id#28)]
+
+(4) InMemoryRelation
+Arguments: [location_id#28, name#29, lat#30, lon#31, borough#32, parameters#33], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@7b5417b0,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) ColumnarToRow
++- FileScan parquet [location_id#28,name#29,lat#30,lon#31,borough#32,parameters#33] Batched: true, DataFilters: [], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3a://aq-lake/gold/dim_station], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<location_id:int,name:string,lat:double,lon:double,borough:string,parameters:array<string>>
+,None)
+
+(5) Scan parquet 
+Output [6]: [location_id#28, name#29, lat#30, lon#31, borough#32, parameters#33]
+Batched: true
+Location: InMemoryFileIndex [s3a://aq-lake/gold/dim_station]
+ReadSchema: struct<location_id:int,name:string,lat:double,lon:double,borough:string,parameters:array<string>>
+
+(6) ColumnarToRow [codegen id : 1]
+Input [6]: [location_id#28, name#29, lat#30, lon#31, borough#32, parameters#33]
+
+(7) Filter
+Input [2]: [borough#32, location_id#28]
+Condition : (isnotnull(borough#32) AND isnotnull(location_id#28))
+
+(8) Project
+Output [1]: [location_id#28]
+Input [2]: [borough#32, location_id#28]
+
+(9) BroadcastExchange
+Input [1]: [location_id#28]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, true] as bigint)),false), [plan_id=1275]
+
+(10) BroadcastHashJoin
+Left keys [1]: [location_id#0]
+Right keys [1]: [location_id#28]
+Join type: Inner
+Join condition: None
+
+(11) Project
+Output [2]: [aqi_daily#2, date_local#4]
+Input [4]: [location_id#0, aqi_daily#2, date_local#4, location_id#28]
+
+(12) HashAggregate
+Input [2]: [aqi_daily#2, date_local#4]
+Keys [1]: [date_local#4]
+Functions [2]: [partial_count(1), partial_sum(CASE WHEN (aqi_daily#2 >= 101) THEN 1 ELSE 0 END)]
+Aggregate Attributes [2]: [count#1175L, sum#1176L]
+Results [3]: [date_local#4, count#1177L, sum#1178L]
+
+(13) Exchange
+Input [3]: [date_local#4, count#1177L, sum#1178L]
+Arguments: hashpartitioning(date_local#4, 200), ENSURE_REQUIREMENTS, [plan_id=1280]
+
+(14) HashAggregate
+Input [3]: [date_local#4, count#1177L, sum#1178L]
+Keys [1]: [date_local#4]
+Functions [2]: [count(1), sum(CASE WHEN (aqi_daily#2 >= 101) THEN 1 ELSE 0 END)]
+Aggregate Attributes [2]: [count(1)#1083L, sum(CASE WHEN (aqi_daily#2 >= 101) THEN 1 ELSE 0 END)#1084L]
+Results [3]: [date_local#4, count(1)#1083L AS n_stations#1075L, sum(CASE WHEN (aqi_daily#2 >= 101) THEN 1 ELSE 0 END)#1084L AS n_usg#1076L]
+
+(15) Filter
+Input [3]: [date_local#4, n_stations#1075L, n_usg#1076L]
+Condition : (isnotnull(n_usg#1076L) AND ((n_usg#1076L > 0) AND (cast(n_usg#1076L as decimal(22,1)) >= (0.5 * cast(n_stations#1075L as decimal(20,0))))))
+
+(16) Project
+Output [4]: [date_local#4, n_stations#1075L, n_usg#1076L, round((cast(n_usg#1076L as double) / cast(n_stations#1075L as double)), 3) AS share_usg#1074]
+Input [3]: [date_local#4, n_stations#1075L, n_usg#1076L]
+
+(17) Exchange
+Input [4]: [date_local#4, n_stations#1075L, n_usg#1076L, share_usg#1074]
+Arguments: rangepartitioning(date_local#4 ASC NULLS FIRST, 200), ENSURE_REQUIREMENTS, [plan_id=1285]
+
+(18) Sort
+Input [4]: [date_local#4, n_stations#1075L, n_usg#1076L, share_usg#1074]
+Arguments: [date_local#4 ASC NULLS FIRST], true, 0
+
+(19) AdaptiveSparkPlan
+Output [4]: [date_local#4, n_stations#1075L, n_usg#1076L, share_usg#1074]
+Arguments: isFinalPlan=false
+

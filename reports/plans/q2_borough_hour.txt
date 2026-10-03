@@ -1,0 +1,122 @@
+== Physical Plan ==
+AdaptiveSparkPlan (20)
++- Sort (19)
+   +- Exchange (18)
+      +- HashAggregate (17)
+         +- Exchange (16)
+            +- HashAggregate (15)
+               +- Project (14)
+                  +- BroadcastHashJoin Inner BuildRight (13)
+                     :- HashAggregate (6)
+                     :  +- Exchange (5)
+                     :     +- HashAggregate (4)
+                     :        +- Project (3)
+                     :           +- Filter (2)
+                     :              +- Scan parquet  (1)
+                     +- BroadcastExchange (12)
+                        +- Filter (11)
+                           +- InMemoryTableScan (7)
+                                 +- InMemoryRelation (8)
+                                       +- * ColumnarToRow (10)
+                                          +- Scan parquet  (9)
+
+
+(1) Scan parquet 
+Output [5]: [location_id#10, hour_utc#12, hour_local#16, aqi_hourly#17, date_local#18]
+Batched: true
+Location: InMemoryFileIndex [s3a://aq-lake/gold/fact_hourly]
+PushedFilters: [IsNotNull(aqi_hourly), IsNotNull(location_id)]
+ReadSchema: struct<location_id:int,hour_utc:timestamp,hour_local:int,aqi_hourly:int>
+
+(2) Filter
+Input [5]: [location_id#10, hour_utc#12, hour_local#16, aqi_hourly#17, date_local#18]
+Condition : (isnotnull(aqi_hourly#17) AND isnotnull(location_id#10))
+
+(3) Project
+Output [4]: [location_id#10, hour_utc#12, hour_local#16, aqi_hourly#17]
+Input [5]: [location_id#10, hour_utc#12, hour_local#16, aqi_hourly#17, date_local#18]
+
+(4) HashAggregate
+Input [4]: [location_id#10, hour_utc#12, hour_local#16, aqi_hourly#17]
+Keys [3]: [location_id#10, hour_utc#12, hour_local#16]
+Functions [1]: [partial_max(aqi_hourly#17)]
+Aggregate Attributes [1]: [max#596]
+Results [4]: [location_id#10, hour_utc#12, hour_local#16, max#597]
+
+(5) Exchange
+Input [4]: [location_id#10, hour_utc#12, hour_local#16, max#597]
+Arguments: hashpartitioning(location_id#10, hour_utc#12, hour_local#16, 200), ENSURE_REQUIREMENTS, [plan_id=601]
+
+(6) HashAggregate
+Input [4]: [location_id#10, hour_utc#12, hour_local#16, max#597]
+Keys [3]: [location_id#10, hour_utc#12, hour_local#16]
+Functions [1]: [max(aqi_hourly#17)]
+Aggregate Attributes [1]: [max(aqi_hourly#17)#497]
+Results [3]: [location_id#10, hour_local#16, max(aqi_hourly#17)#497 AS aqi#490]
+
+(7) InMemoryTableScan
+Output [2]: [location_id#28, borough#32]
+Arguments: [location_id#28, borough#32], [isnotnull(borough#32), isnotnull(location_id#28)]
+
+(8) InMemoryRelation
+Arguments: [location_id#28, name#29, lat#30, lon#31, borough#32, parameters#33], CachedRDDBuilder(org.apache.spark.sql.execution.columnar.DefaultCachedBatchSerializer@7b5417b0,StorageLevel(disk, memory, deserialized, 1 replicas),*(1) ColumnarToRow
++- FileScan parquet [location_id#28,name#29,lat#30,lon#31,borough#32,parameters#33] Batched: true, DataFilters: [], Format: Parquet, Location: InMemoryFileIndex(1 paths)[s3a://aq-lake/gold/dim_station], PartitionFilters: [], PushedFilters: [], ReadSchema: struct<location_id:int,name:string,lat:double,lon:double,borough:string,parameters:array<string>>
+,None)
+
+(9) Scan parquet 
+Output [6]: [location_id#28, name#29, lat#30, lon#31, borough#32, parameters#33]
+Batched: true
+Location: InMemoryFileIndex [s3a://aq-lake/gold/dim_station]
+ReadSchema: struct<location_id:int,name:string,lat:double,lon:double,borough:string,parameters:array<string>>
+
+(10) ColumnarToRow [codegen id : 1]
+Input [6]: [location_id#28, name#29, lat#30, lon#31, borough#32, parameters#33]
+
+(11) Filter
+Input [2]: [location_id#28, borough#32]
+Condition : (isnotnull(borough#32) AND isnotnull(location_id#28))
+
+(12) BroadcastExchange
+Input [2]: [location_id#28, borough#32]
+Arguments: HashedRelationBroadcastMode(List(cast(input[0, int, false] as bigint)),false), [plan_id=604]
+
+(13) BroadcastHashJoin
+Left keys [1]: [location_id#10]
+Right keys [1]: [location_id#28]
+Join type: Inner
+Join condition: None
+
+(14) Project
+Output [3]: [hour_local#16, aqi#490, borough#32]
+Input [5]: [location_id#10, hour_local#16, aqi#490, location_id#28, borough#32]
+
+(15) HashAggregate
+Input [3]: [hour_local#16, aqi#490, borough#32]
+Keys [2]: [borough#32, hour_local#16]
+Functions [2]: [partial_avg(aqi#490), partial_count(1)]
+Aggregate Attributes [3]: [sum#590, count#591L, count#592L]
+Results [5]: [borough#32, hour_local#16, sum#593, count#594L, count#595L]
+
+(16) Exchange
+Input [5]: [borough#32, hour_local#16, sum#593, count#594L, count#595L]
+Arguments: hashpartitioning(borough#32, hour_local#16, 200), ENSURE_REQUIREMENTS, [plan_id=609]
+
+(17) HashAggregate
+Input [5]: [borough#32, hour_local#16, sum#593, count#594L, count#595L]
+Keys [2]: [borough#32, hour_local#16]
+Functions [2]: [avg(aqi#490), count(1)]
+Aggregate Attributes [2]: [avg(aqi#490)#499, count(1)#498L]
+Results [4]: [borough#32, hour_local#16, round(avg(aqi#490)#499, 1) AS aqi_avg#488, count(1)#498L AS n_station_hours#489L]
+
+(18) Exchange
+Input [4]: [borough#32, hour_local#16, aqi_avg#488, n_station_hours#489L]
+Arguments: rangepartitioning(borough#32 ASC NULLS FIRST, hour_local#16 ASC NULLS FIRST, 200), ENSURE_REQUIREMENTS, [plan_id=612]
+
+(19) Sort
+Input [4]: [borough#32, hour_local#16, aqi_avg#488, n_station_hours#489L]
+Arguments: [borough#32 ASC NULLS FIRST, hour_local#16 ASC NULLS FIRST], true, 0
+
+(20) AdaptiveSparkPlan
+Output [4]: [borough#32, hour_local#16, aqi_avg#488, n_station_hours#489L]
+Arguments: isFinalPlan=false
+
