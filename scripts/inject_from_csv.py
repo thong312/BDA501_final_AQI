@@ -9,7 +9,8 @@ nên trên sân khấu gần như không thấy dữ liệu mới. Script bơm b
 - Mỗi trạm đi theo một sóng low -> high -> low (lệch pha), cộng nhiễu: AQI vượt ngưỡng rồi về lại,
   nên thấy đủ ESCALATE, xác nhận 2 lần (USG), hysteresis và RECOVERED; alert_id theo giờ + cooldown
   1 giờ chặn spam khi sóng lặp lại.
-- Hết thời gian: bơm giá trị low thêm SETTLE_SEC để các trạm/vùng về Good (tập dượt lại được).
+- Hết thời gian: bơm giá trị low tới khi các borough liên quan về dưới USG (vùng hạ mức cần nhiều
+  micro-batch: xác nhận 2 lần, hạ thận trọng từng bậc), tối thiểu SETTLE_MIN_SEC, tối đa SETTLE_MAX_SEC.
 - source = "manual-demo" để phân biệt với dữ liệu OpenAQ.
 """
 import argparse
@@ -20,10 +21,11 @@ import time
 from datetime import datetime, timezone
 
 from common.aqi import compute_aqi, get_level, get_level_name
-from scripts.inject_test_measurements import fmt, load_sensors, send
+from common.geo import get_borough
+from scripts.inject_test_measurements import fmt, load_sensors, region_levels, send
 
 SOURCE = "manual-demo"
-SETTLE_SEC = 150  # vùng cần 2 micro-batch (trigger 1 phút) để xác nhận hạ mức
+SETTLE_MIN_SEC, SETTLE_MAX_SEC = 150, 360
 
 
 def load_rows(path, sensors):
@@ -36,7 +38,7 @@ def load_rows(path, sensors):
                 print(f"Bỏ qua sensor {r['sensor_id']}: không có trong metadata hoặc không phải pm25")
                 continue
             rows.append({"sensor_id": m["sensor_id"], "location_id": m["location_id"], "name": m["location_name"],
-                         "units": m["units"], "low": float(r["low"]), "high": float(r["high"]),
+                         "units": m["units"], "borough": get_borough(m["lat"], m["lon"]), "low": float(r["low"]), "high": float(r["high"]),
                          "phase": float(r["phase"])})
     if not rows:
         raise SystemExit("Không có sensor hợp lệ trong " + path)
@@ -59,6 +61,23 @@ def tick(rows, values):
     print(fmt(now), " | ".join(parts), flush=True)
 
 
+def settle(rows, interval):
+    boroughs = {r["borough"] for r in rows} - {None}
+    print(f"Kết thúc: bơm giá trị low tới khi {sorted(boroughs)} về dưới USG...")
+    t0 = time.monotonic()
+    while True:
+        tick(rows, [r["low"] for r in rows])
+        time.sleep(interval)
+        waited = time.monotonic() - t0
+        high = {b: lv for b, lv in region_levels().items() if b in boroughs and (lv or 0) >= 2}
+        if waited >= SETTLE_MIN_SEC and not high:
+            print("Các borough đã về dưới USG.")
+            return
+        if waited >= SETTLE_MAX_SEC:
+            print("Vẫn còn borough >= USG:", high, "-> chạy inject_test_measurements.py --recover")
+            return
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--csv", default="scripts/fake_data.csv")
@@ -76,11 +95,7 @@ def main():
             tick(rows, [wave(r, elapsed, args.period * 60) for r in rows])
             time.sleep(args.interval)
         if not args.no_settle:
-            print(f"Kết thúc: bơm giá trị low thêm {SETTLE_SEC}s để các trạm/vùng về Good...")
-            end = time.monotonic() + SETTLE_SEC
-            while time.monotonic() < end:
-                tick(rows, [r["low"] for r in rows])
-                time.sleep(args.interval)
+            settle(rows, args.interval)
     except KeyboardInterrupt:
         print("\nĐã dừng. Đưa về Good: python3 scripts/inject_test_measurements.py --recover")
 
