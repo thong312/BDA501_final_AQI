@@ -1,8 +1,7 @@
 """AQ Dashboard - Flask API + Static HTML server."""
 
 import os
-import json
-from datetime import datetime, timezone
+from decimal import Decimal
 
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
@@ -17,15 +16,15 @@ PG_DSN = os.getenv("PG_DSN", "postgresql://aq_user:aq_password@postgres:5432/aq"
 def get_conn():
     return psycopg.connect(PG_DSN, row_factory=dict_row)
 
-@app.route(/)
+@app.route("/")
 def index():
     return send_from_directory("static", "index.html")
 
-@app.route(/<path:path>)
+@app.route("/<path:path>")
 def static_files(path):
     return send_from_directory("static", path)
 
-@app.route(/api/overview)
+@app.route("/api/overview")
 def overview():
     with get_conn() as conn:
         cur = conn.cursor()
@@ -49,7 +48,7 @@ def overview():
             "last_reading": ts_row["last_ts"].isoformat() if ts_row["last_ts"] else None,
         })
 
-@app.route(/api/stations)
+@app.route("/api/stations")
 def stations():
     with get_conn() as conn:
         cur = conn.cursor()
@@ -60,11 +59,11 @@ def stations():
                 r["last_event_time"] = r["last_event_time"].isoformat()
         return jsonify(rows)
 
-@app.route(/api/readings)
+@app.route("/api/readings")
 def readings():
     try:
         hours = int(request.args.get("hours", 24))
-        if hours <= 0: hours = 24
+        if not 0 < hours <= 24 * 30: hours = 24
     except ValueError:
         hours = 24
     with get_conn() as conn:
@@ -76,11 +75,11 @@ def readings():
                 r["event_time"] = r["event_time"].isoformat()
         return jsonify(rows)
 
-@app.route(/api/aqi_hourly)
+@app.route("/api/aqi_hourly")
 def aqi_hourly():
     try:
         hours = int(request.args.get("hours", 72))
-        if hours <= 0: hours = 72
+        if not 0 < hours <= 24 * 30: hours = 72
     except ValueError:
         hours = 72
     with get_conn() as conn:
@@ -92,11 +91,11 @@ def aqi_hourly():
                 r["bucket"] = r["bucket"].isoformat()
         return jsonify(rows)
 
-@app.route(/api/alerts)
+@app.route("/api/alerts")
 def alerts():
     try:
         limit = int(request.args.get("limit", 50))
-        if limit <= 0: limit = 50
+        if not 0 < limit <= 500: limit = 50
     except ValueError:
         limit = 50
     with get_conn() as conn:
@@ -109,7 +108,7 @@ def alerts():
                     r[k] = r[k].isoformat()
         return jsonify(rows)
 
-@app.route(/api/daily_summary)
+@app.route("/api/daily_summary")
 def daily_summary():
     with get_conn() as conn:
         cur = conn.cursor()
@@ -120,7 +119,7 @@ def daily_summary():
                 r["date_local"] = r["date_local"].isoformat()
         return jsonify(rows)
 
-@app.route(/api/cluster_profiles)
+@app.route("/api/cluster_profiles")
 def cluster_profiles():
     with get_conn() as conn:
         cur = conn.cursor()
@@ -128,11 +127,11 @@ def cluster_profiles():
         rows = cur.fetchall()
         for r in rows:
             for k, v in r.items():
-                if hasattr(v, "as_integer_ratio"):
+                if isinstance(v, Decimal):
                     r[k] = float(v)
         return jsonify(rows)
 
-@app.route(/api/region_stats)
+@app.route("/api/region_stats")
 def region_stats():
     with get_conn() as conn:
         cur = conn.cursor()

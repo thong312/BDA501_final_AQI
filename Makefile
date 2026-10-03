@@ -1,4 +1,4 @@
-.PHONY: env build up down reset test test-spark streaming backfill batch clean-silver mapreduce gold validate analytics perf
+.PHONY: env build up down reset test test-spark streaming backfill batch clean-silver mapreduce gold validate analytics perf demo-alert demo-replay demo-recover
 
 DATE ?= $(shell date -d yesterday +%F 2>/dev/null || date -v-1d +%F)
 PACKAGES = org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3,org.apache.hadoop:hadoop-aws:3.3.4,org.postgresql:postgresql:42.7.3
@@ -61,3 +61,13 @@ analytics:
 
 perf:
 	$(SUBMIT) /opt/aq/jobs/batch/performance_test.py
+
+# Demo cảnh báo realtime (cần `make streaming` đang chạy). Windows: .\start_demo.ps1
+demo-alert:
+	docker exec -w /opt/aq spark-master python3 scripts/inject_test_measurements.py
+
+demo-replay:
+	docker exec -w /opt/aq spark-master python3 scripts/inject_test_measurements.py --at $(AT) --pm25 $(PM25)
+
+demo-recover:
+	docker exec -w /opt/aq spark-master python3 scripts/inject_test_measurements.py --recover
