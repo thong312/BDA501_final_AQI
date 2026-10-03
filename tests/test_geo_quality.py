@@ -14,7 +14,7 @@ def test_borough_assignment():
     assert get_borough(40.84, -73.88) == "Bronx"
     assert get_borough(40.65, -73.95) == "Brooklyn"
     assert get_borough(40.58, -74.15) == "Staten Island"
-    assert get_borough(40.74, -74.17) is None  # Newark, NJ: trong bbox nhung ngoai NYC
+    assert get_borough(40.74, -74.17) is None  # Newark, NJ: trong bbox nhưng ngoài NYC
 
 
 def test_bbox():
@@ -29,7 +29,7 @@ def test_quality_flags():
     assert quality_flag("pm25", "µg/m³", 5000) == "OUT_OF_RANGE"
     assert quality_flag("o3", "ppm", 0.05, now - timedelta(hours=4), now) == "STALE"
     assert quality_flag("o3", "ppm", 0.05, now - timedelta(hours=1), now) == "OK"
-    assert quality_flag("bc", "µg/m³", 3.0) == "OK"  # khong co luat -> chi kiem tra am
+    assert quality_flag("bc", "µg/m³", 3.0) == "OK"  # không có luật -> chỉ kiểm tra âm
 
 
 def test_threshold():

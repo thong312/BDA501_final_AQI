@@ -1,8 +1,8 @@
-"""Tinh AQI theo EPA, dung chung cho streaming (aqi_instant) va batch (aqi_daily).
+"""Tính AQI theo EPA, dùng chung cho streaming (aqi_instant) và batch (aqi_daily).
 
-Hai loai AQI chi khac dau vao:
-- aqi_instant: mot ban do don le (averaging="instant")
-- aqi_daily:   trung binh theo cua so chuan EPA (PM 24h, O3/CO 8h) — batch tu tinh roi truyen vao
+Hai loại AQI chỉ khác đầu vào:
+- aqi_instant: một bản đo đơn lẻ (averaging="instant")
+- aqi_daily:   trung bình theo cửa sổ chuẩn EPA (PM 24h, O3/CO 8h) — batch tự tính rồi truyền vào
 """
 import math
 from typing import Optional
@@ -15,13 +15,13 @@ LEVEL_NAMES = ["GOOD", "MODERATE", "USG", "UNHEALTHY", "VERY_UNHEALTHY", "HAZARD
 LEVEL_LOWER_AQI = [0, 51, 101, 151, 201, 301]
 UNKNOWN_LEVEL = -1
 
-# Khoi luong mol (g/mol) de doi µg/m³ <-> ppb o 25°C, 1 atm: ppb = µg/m³ × 24.45 / MW
+# Khối lượng mol (g/mol) để đổi µg/m³ <-> ppb ở 25°C, 1 atm: ppb = µg/m³ × 24.45 / MW
 _MOLAR_MASS = {"o3": 48.00, "no2": 46.01, "so2": 64.07, "co": 28.01}
 _MOLAR_VOLUME = 24.45
 
 
 def get_level(aqi) -> int:
-    """Muc EPA 0..5 cua mot gia tri AQI."""
+    """Mức EPA 0..5 của một giá trị AQI."""
     if aqi is None:
         return UNKNOWN_LEVEL
     for level in range(len(LEVEL_LOWER_AQI) - 1, -1, -1):
@@ -40,7 +40,7 @@ def normalize_units(units) -> str:
 
 
 def convert_units(parameter: str, value: float, units, target: str) -> Optional[float]:
-    """Doi nong do ve don vi cua bang breakpoint. Tra None neu khong doi duoc."""
+    """Đổi nồng độ về đơn vị của bảng breakpoint. Trả None nếu không đổi được."""
     src = normalize_units(units)
     if src == target or not src:
         return value
@@ -59,7 +59,7 @@ def convert_units(parameter: str, value: float, units, target: str) -> Optional[
 
 
 def truncate(value: float, decimals: int) -> float:
-    """Cat (khong lam tron) theo quy dinh EPA; epsilon chong loi dau phay dong (0.29*100)."""
+    """Cắt (không làm tròn) theo quy định EPA; epsilon chống lỗi dấu phẩy động (0.29*100)."""
     factor = 10 ** decimals
     return math.floor(value * factor + 1e-9) / factor
 
@@ -69,7 +69,7 @@ def _round_half_up(x: float) -> int:
 
 
 def aqi_from_table(table_key: str, concentration: float) -> Optional[int]:
-    """Noi suy AQI tu mot bang; nong do da o dung don vi cua bang."""
+    """Nội suy AQI từ một bảng; nồng độ đã ở đúng đơn vị của bảng."""
     table = BREAKPOINTS.get(table_key)
     if table is None or concentration is None or concentration < 0:
         return None
@@ -80,20 +80,20 @@ def aqi_from_table(table_key: str, concentration: float) -> Optional[int]:
             return _round_half_up((i_hi - i_lo) / (c_hi - c_lo) * (c - c_lo) + i_lo)
     c_lo, c_hi, i_lo, i_hi = bps[-1]
     if c > c_hi:
-        # Vuot bang: ngoai suy tuyen tinh doan cuoi (AQI > 500)
+        # Vượt bảng: ngoại suy tuyến tính đoạn cuối (AQI > 500)
         return _round_half_up((i_hi - i_lo) / (c_hi - c_lo) * (c - c_lo) + i_lo)
-    return None  # duoi doan dau cua bang chi dinh nghia tu USG (o3_1h)
+    return None  # dưới đoạn đầu của bảng chỉ định nghĩa từ USG (o3_1h)
 
 
 def compute_aqi(parameter, value, units, averaging: str = "instant") -> Optional[int]:
-    """AQI cua mot chat.
+    """AQI của một chất.
 
     averaging:
-      "instant" — ban do don le (streaming). O3 lay max cua bang 8h va bang 1h.
-      "8h"      — gia tri da la trung binh 8h (O3, CO trong batch).
-      "1h"      — O3 trung binh 1h, chi dung bang o3_1h (dinh nghia tu USG tro len).
-      "24h"     — gia tri da la trung binh 24h (PM2.5, PM10 trong batch).
-    Chat khong co bang breakpoint -> None.
+      "instant" — bản đo đơn lẻ (streaming). O3 lấy max của bảng 8h và bảng 1h.
+      "8h"      — giá trị đã là trung bình 8h (O3, CO trong batch).
+      "1h"      — O3 trung bình 1h, chỉ dùng bảng o3_1h (định nghĩa từ USG trở lên).
+      "24h"     — giá trị đã là trung bình 24h (PM2.5, PM10 trong batch).
+    Chất không có bảng breakpoint -> None.
     """
     if value is None or parameter is None:
         return None
@@ -112,7 +112,7 @@ def compute_aqi(parameter, value, units, averaging: str = "instant") -> Optional
         aqi_8h = aqi_from_table("o3_8h", conc) if truncate(conc, 3) <= 0.200 else None
         aqi_1h = aqi_from_table("o3_1h", conc)
         if averaging == "8h":
-            # 8h khong dinh nghia tren 0.200 ppm -> dung bang 1h theo huong dan EPA
+            # 8h không định nghĩa trên 0.200 ppm -> dùng bảng 1h theo hướng dẫn EPA
             return aqi_8h if aqi_8h is not None else aqi_1h
         if averaging == "1h":
             return aqi_1h

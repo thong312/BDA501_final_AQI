@@ -1,18 +1,18 @@
 """Silver -> Gold (ARCHITECTURE 6.6).
 
-fact_hourly       (location_id, parameter, hour_utc)  nong do trung binh gio, aqi_hourly
-fact_daily_aqi    (location_id, date_local)           AQI ngay chuan EPA:
-                     PM2.5/PM10: trung binh 24h (>= 18 gio co du lieu)
-                     O3: max trung binh truot 8h (>= 6 gio trong cua so), so voi max 1h (bang 1h)
-                     CO: max trung binh truot 8h; NO2/SO2: max 1h
-                     aqi_daily = max cac chat, dominant_pollutant, level
-dim_station       (location_id)                       ten, lat, lon, borough, danh sach chat do
+fact_hourly       (location_id, parameter, hour_utc)  nồng độ trung bình giờ, aqi_hourly
+fact_daily_aqi    (location_id, date_local)           AQI ngày chuẩn EPA:
+                     PM2.5/PM10: trung bình 24h (>= 18 giờ có dữ liệu)
+                     O3: max trung bình trượt 8h (>= 6 giờ trong cửa sổ), so với max 1h (bảng 1h)
+                     CO: max trung bình trượt 8h; NO2/SO2: max 1h
+                     aqi_daily = max các chất, dominant_pollutant, level
+dim_station       (location_id)                       tên, lat, lon, borough, danh sách chất đo
 mart_region_daily (borough, date_local)
-mart_temporal     (borough, grain, bucket)            grain ∈ hour_local / dow / month, tren toan lich su
-cluster_features  (location_id, date_local)           chi ngay co >= 18 gio du lieu
+mart_temporal     (borough, grain, bucket)            grain ∈ hour_local / dow / month, trên toàn lịch sử
+cluster_features  (location_id, date_local)           chỉ ngày có >= 18 giờ dữ liệu
 
-fact_* va mart_region_daily, cluster_features partition theo date_local, ghi de dung cac ngay xu ly.
-Join fact_* voi dim_station bang broadcast; plan luu o reports/plans/.
+fact_* và mart_region_daily, cluster_features partition theo date_local, ghi đè đúng các ngày xử lý.
+Join fact_* với dim_station bằng broadcast; plan lưu ở reports/plans/.
 """
 import argparse
 import logging
@@ -58,7 +58,7 @@ def aqi_col(parameter, value, units, averaging: str):
     return aqi_udf(parameter, value, units, F.lit(averaging)).cast("int")
 
 
-# ------------------------------------------------------------------ builders (ham thuan)
+# ------------------------------------------------------------------ builders (hàm thuần)
 
 def build_fact_hourly(df_silver: DataFrame) -> DataFrame:
     hourly = (df_silver
@@ -74,7 +74,7 @@ def build_fact_hourly(df_silver: DataFrame) -> DataFrame:
 
 
 def _rolling_8h(df_hourly: DataFrame) -> DataFrame:
-    """Trung binh truot 8h ket thuc tai moi gio (can >= 6 gio co du lieu trong cua so)."""
+    """Trung bình trượt 8h kết thúc tại mỗi giờ (cần >= 6 giờ có dữ liệu trong cửa sổ)."""
     w = (Window.partitionBy("location_id", "parameter")
          .orderBy(F.col("hour_utc").cast("long")).rangeBetween(-7 * 3600, 0))
     return (df_hourly.withColumn("avg_8h", F.avg("value_avg").over(w))
@@ -83,7 +83,7 @@ def _rolling_8h(df_hourly: DataFrame) -> DataFrame:
 
 
 def build_fact_daily_aqi(df_fact_hourly: DataFrame) -> DataFrame:
-    """AQI ngay chuan EPA. df_fact_hourly nen gom ca ngay truoc de co cua so 8h dau ngay."""
+    """AQI ngày chuẩn EPA. df_fact_hourly nên gồm cả ngày trước để có cửa sổ 8h đầu ngày."""
     rolled = _rolling_8h(df_fact_hourly)
     per_param = (rolled.groupBy("location_id", "date_local", "parameter")
                  .agg(F.avg("value_avg").alias("avg_24h"),
@@ -116,7 +116,7 @@ def build_dim_station(df_silver: DataFrame, df_existing: DataFrame = None) -> Da
                 F.sort_array(F.collect_set("parameter")).alias("parameters")))
     if df_existing is None:
         return new
-    # Gop voi dim cu: uu tien thong tin moi, hop danh sach chat do
+    # Gộp với dim cũ: ưu tiên thông tin mới, hợp danh sách chất đo
     both = (new.withColumn("prio", F.lit(0))
             .unionByName(df_existing.select(new.columns).withColumn("prio", F.lit(1))))
     return both.groupBy("location_id").agg(
@@ -135,7 +135,7 @@ def build_mart_region_daily(df_fact_daily: DataFrame, df_dim: DataFrame) -> Data
 
 
 def station_hourly_aqi(df_fact_hourly: DataFrame) -> DataFrame:
-    """AQI tram theo gio = max cac chat trong gio do."""
+    """AQI trạm theo giờ = max các chất trong giờ đó."""
     return (df_fact_hourly.filter(F.col("aqi_hourly").isNotNull())
             .groupBy("location_id", "hour_utc", "date_local", "hour_local")
             .agg(F.max("aqi_hourly").alias("aqi"),
@@ -175,7 +175,7 @@ def build_cluster_features(df_fact_hourly: DataFrame) -> DataFrame:
                   F.avg("aqi_pm25").alias("pm25_mean"),
                   F.avg("aqi_o3").alias("o3_mean"))
              .filter(F.col("n_hours") >= MIN_HOURS_DAILY))
-    # Ti trong PM2.5 trong (PM2.5 + O3) theo AQI trung binh: 1 = thuan bui min, 0 = thuan ozone
+    # Tỉ trọng PM2.5 trong (PM2.5 + O3) theo AQI trung bình: 1 = thuần bụi mịn, 0 = thuần ozone
     pm, o3 = F.coalesce("pm25_mean", F.lit(0.0)), F.coalesce("o3_mean", F.lit(0.0))
     ratio = F.when((pm + o3) > 0, pm / (pm + o3))
     return (feats.join(peak_hour, ["location_id", "date_local"])
@@ -212,18 +212,18 @@ def main():
     elif args.date_from and args.date_to:
         date_from, date_to = date.fromisoformat(args.date_from), date.fromisoformat(args.date_to)
     else:
-        parser.error("can --date hoac --from/--to")
+        parser.error("cần --date hoặc --from/--to")
 
     spark = create_spark_session("AQ_Aggregate_Silver_to_Gold",
                                  conf={"spark.sql.sources.partitionOverwriteMode": "dynamic"})
     df_silver = read_silver(spark, date_from, date_to)
     if df_silver is None:
-        logger.warning("Khong co Silver cho %s..%s", date_from, date_to)
+        logger.warning("Không có Silver cho %s..%s", date_from, date_to)
         return
     df_silver = df_silver.cache()
     in_range = F.col("date_local").between(F.lit(date_from), F.lit(date_to))
 
-    # dim_station: gop voi ban cu roi ghi de toan bo (bang nho, materialize truoc khi ghi de)
+    # dim_station: gộp với bản cũ rồi ghi đè toàn bộ (bảng nhỏ, materialize trước khi ghi đè)
     existing, _ = existing_paths(spark, [f"{GOLD_PATH}dim_station"])
     df_dim_old = spark.read.parquet(f"{GOLD_PATH}dim_station") if existing else None
     dim_rows = build_dim_station(df_silver, df_dim_old).collect()
@@ -231,7 +231,7 @@ def main():
                                               "borough string, parameters array<string>").cache()
     df_dim.write.mode("overwrite").parquet(f"{GOLD_PATH}dim_station")
 
-    # fact_hourly (tinh ca ngay truoc de co cua so 8h, chi ghi cac ngay trong khoang)
+    # fact_hourly (tính cả ngày trước để có cửa sổ 8h, chỉ ghi các ngày trong khoảng)
     df_hourly_all = build_fact_hourly(df_silver).cache()
     df_hourly = df_hourly_all.filter(in_range)
     df_hourly.write.mode("overwrite").partitionBy("date_local").parquet(f"{GOLD_PATH}fact_hourly")
@@ -246,7 +246,7 @@ def main():
     df_cluster = build_cluster_features(df_hourly)
     df_cluster.write.mode("overwrite").partitionBy("date_local").parquet(f"{GOLD_PATH}cluster_features")
 
-    # mart_temporal tren toan bo lich su fact_hourly (doc lai sau khi da ghi cac ngay moi)
+    # mart_temporal trên toàn bộ lịch sử fact_hourly (đọc lại sau khi đã ghi các ngày mới)
     df_temporal = build_mart_temporal(spark.read.parquet(f"{GOLD_PATH}fact_hourly"), df_dim)
     save_plan(df_temporal, "mart_temporal")
     rows = df_temporal.collect()

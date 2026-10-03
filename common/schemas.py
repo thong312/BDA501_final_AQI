@@ -17,12 +17,12 @@ def _check_iso_datetime(v: Optional[str], required: bool) -> Optional[str]:
 
 
 class Measurement(BaseModel):
-    # Bat buoc: thieu hoac sai kieu -> DLQ
+    # Bắt buộc: thiếu hoặc sai kiểu -> DLQ
     sensor_id: int
     location_id: int
     value: float
     datetime_utc: StrictStr
-    # Tuy chon
+    # Tuỳ chọn
     datetime_local: Optional[str] = None
     lat: Optional[float] = None
     lon: Optional[float] = None
@@ -72,7 +72,7 @@ class Alert(BaseModel):
     created_at: str
 
 
-# ---------- Spark StructType (pyspark chi co trong image Spark) ----------
+# ---------- Spark StructType (pyspark chỉ có trong image Spark) ----------
 try:
     from pyspark.sql.types import (DoubleType, IntegerType, StringType, StructField,
                                    StructType)
@@ -87,7 +87,7 @@ try:
         StructField("lon", DoubleType()),
         StructField("ingested_at", StringType()),
         StructField("source", StringType()),
-        # Chi co o ban ghi backfill (archive)
+        # Chỉ có ở bản ghi backfill (archive)
         StructField("parameter", StringType()),
         StructField("units", StringType()),
         StructField("location_name", StringType()),
@@ -103,5 +103,5 @@ try:
         StructField("lon", DoubleType()),
         StructField("updated_at", StringType()),
     ])
-except ImportError:  # Poller / Notifier khong can Spark
+except ImportError:  # Poller / Notifier không cần Spark
     MEASUREMENT_STRUCT = SENSOR_STRUCT = None

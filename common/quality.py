@@ -1,9 +1,9 @@
-"""Quy tac chat luong du lieu dung chung (ARCHITECTURE 6.2 buoc 3, 6.4, 6.5).
+"""Quy tắc chất lượng dữ liệu dùng chung (ARCHITECTURE 6.2 bước 3, 6.4, 6.5).
 
-Thu tu uu tien flag: NO_METADATA > NEGATIVE > OUT_OF_RANGE > STALE > OK.
-- Streaming query B: chi giu OK.
-- Batch (lam sach, MapReduce): gan flag, loc NO_METADATA/NEGATIVE/OUT_OF_RANGE;
-  STALE van giu lai vi trong batch ban do tre van la du lieu lich su hop le.
+Thứ tự ưu tiên flag: NO_METADATA > NEGATIVE > OUT_OF_RANGE > STALE > OK.
+- Streaming query B: chỉ giữ OK.
+- Batch (làm sạch, MapReduce): gắn flag, lọc NO_METADATA/NEGATIVE/OUT_OF_RANGE;
+  STALE vẫn giữ lại vì trong batch bản đo trễ vẫn là dữ liệu lịch sử hợp lệ.
 """
 from datetime import datetime
 from typing import Optional
@@ -27,7 +27,7 @@ def get_rule(parameter, units) -> Optional[dict]:
 
 def quality_flag(parameter, units, value, event_time: Optional[datetime] = None,
                  reference_time: Optional[datetime] = None) -> str:
-    """Flag cua mot ban do. reference_time: 'now' (streaming) hoac ingested_at (batch)."""
+    """Flag của một bản đo. reference_time: 'now' (streaming) hoặc ingested_at (batch)."""
     if parameter is None:
         return "NO_METADATA"
     if value is None or value < 0:
@@ -46,7 +46,7 @@ def threshold(parameter, units) -> Optional[float]:
     return rule.get("threshold") if rule else None
 
 
-# ---------- Phien ban cot Spark (cung logic, sinh tu cung file YAML) ----------
+# ---------- Phiên bản cột Spark (cùng logic, sinh từ cùng file YAML) ----------
 
 def spark_normalized_units(col):
     from pyspark.sql import functions as F

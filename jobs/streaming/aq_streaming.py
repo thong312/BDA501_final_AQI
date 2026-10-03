@@ -1,8 +1,8 @@
-"""Spark Structured Streaming: mat application, hai query (ARCHITECTURE 6.2).
+"""Spark Structured Streaming: một application, hai query (ARCHITECTURE 6.2).
 
-Query A: ghi raw vAo Bronze (JSON Lines gzip), khAng lac, khAng saa.
-Query B: AQI tac thai + ba luat canh bAo, state lu trong PostgreSQL schema realtime,
-         alert cap vAng publish vAo aq.alerts.level-changed.v1 (qua outbox realtime.alerts.published_at).
+Query A: ghi raw vào Bronze (JSON Lines gzip), không lọc, không sửa.
+Query B: AQI tức thời + bộ luật cảnh báo, state lưu trong PostgreSQL schema realtime,
+         alert cấp vùng publish vào aq.alerts.level-changed.v1 (qua outbox realtime.alerts.published_at).
 """
 import json
 import logging
@@ -44,7 +44,7 @@ METADATA_UNKNOWN_REFRESH_GAP = timedelta(minutes=5)
 TIMEOUT_CHECK_SEC = 300
 TS_FMT = "yyyy-MM-dd'T'HH:mm:ss'Z'"
 
-# Serialize foreachBatch vA luang kiam tra timeout trAn driver (cAng ghi station/region_status)
+# Serialize foreachBatch và luồng kiểm tra timeout trên driver (cùng ghi station/region_status)
 DRIVER_LOCK = threading.Lock()
 
 
@@ -94,7 +94,7 @@ META_SCHEMA = StructType([
 
 
 class MetadataCache:
-    """Metadata sensor ta topic compacted, cache trAn driver, lAm mai theo Aiau kian 6.2 bac 1."""
+    """Metadata sensor từ topic compacted, cache trên driver, làm mới theo điều kiện 6.2 bước 1."""
 
     def __init__(self):
         self.df = None
@@ -119,7 +119,7 @@ class MetadataCache:
         return self.df
 
     def refresh_for_unknown(self, spark: SparkSession) -> bool:
-        """Gap sensor_id khAng khap: Aac lai, tai Aa 1 lan / 5 phAt."""
+        """Gặp sensor_id không khớp: đọc lại, tối đa 1 lần / 5 phút."""
         now = datetime.now(timezone.utc)
         if self.last_unknown_refresh and now - self.last_unknown_refresh < METADATA_UNKNOWN_REFRESH_GAP:
             return False
@@ -129,7 +129,7 @@ class MetadataCache:
 
     def _load(self, spark: SparkSession, offsets):
         rows = read_sensor_metadata(spark, KAFKA_BOOTSTRAP).collect()
-        # Metadata nha -> gAn borough trAn driver bang shapely
+        # Metadata nhỏ -> gán borough trên driver bằng shapely
         records = [(r.sensor_id, r.location_id, r.location_name, r.parameter, r.units, r.lat, r.lon,
                     get_borough(r.lat, r.lon)) for r in rows]
         if self.df is not None:
@@ -159,7 +159,7 @@ def upsert_stations(records):
         """, list(stations.values()))
 
 
-METADATA = None  # khaYi tao trong main Aa import module (unit test) khAng can Kafka
+METADATA = None  # khởi tạo trong main để import module (unit test) không cần Kafka
 
 
 # ------------------------------------------------------------------ Postgres helpers
@@ -201,7 +201,7 @@ def _upsert_region_status(cur, borough, state, trigger_location_id):
 
 
 def _region_state(row):
-    """DAng region_status -> state cho decide() (region_level AAng vai alerted_level)."""
+    """Dòng region_status -> state cho decide() (region_level đóng vai alerted_level)."""
     return {"alerted_level": row["region_level"], "candidate_level": row["candidate_level"],
             "candidate_count": row["candidate_count"], "last_event_time": row["last_event_time"],
             "last_alert_at": row["last_alert_at"], "last_alert_level": row["last_alert_level"]}
@@ -217,7 +217,7 @@ def _insert_alerts(cur, records):
 
 
 def evaluate_regions(cur, boroughs, now):
-    """Bac 8: mac vAng = max alerted_level cAc tram cAng borough, qua ba luat nh cap tram."""
+    """Bước 8: mức vùng = max alerted_level các trạm cùng borough, qua bộ luật như cấp trạm."""
     if not boroughs:
         return []
     cur.execute("SELECT * FROM realtime.region_status WHERE borough = ANY(%s) FOR UPDATE", (list(boroughs),))
@@ -257,7 +257,7 @@ _producer = None
 
 
 def publish_pending_alerts():
-    """Publish alert cap vAng cha gai (outbox). Cha AAnh dau published khi Kafka xAc nhan."""
+    """Publish alert cấp vùng chưa gửi (outbox). Chỉ đánh dấu published khi Kafka xác nhận."""
     global _producer
     if _producer is None:
         _producer = Producer({"bootstrap.servers": KAFKA_BOOTSTRAP, "acks": "all",
@@ -275,7 +275,7 @@ def publish_pending_alerts():
         delivered = []
 
         def on_delivery(alert_id):
-            # Delivery report khAng mang header caa message -> gan alert_id qua closure
+            # Delivery report không mang header của message -> gắn alert_id qua closure
             def callback(err, _msg):
                 if err is None:
                     delivered.append(alert_id)
@@ -293,10 +293,10 @@ def publish_pending_alerts():
         logger.info("Published %d/%d region alerts", len(delivered), len(pending))
 
 
-# ------------------------------------------------------------------ Timeout (luat 7)
+# ------------------------------------------------------------------ Timeout (luật 7)
 
 def run_timeouts(now=None):
-    """Tram/vAng Aang >= USG mA quA STALE_TIMEOUT_SEC khAng cA da liau -> UNKNOWN."""
+    """Trạm/vùng đang >= USG mà quá STALE_TIMEOUT_SEC không có dữ liệu -> UNKNOWN."""
     now = now or datetime.now(timezone.utc)
     cutoff = now - timedelta(seconds=ALERT_CFG["STALE_TIMEOUT_SEC"])
     records = []
@@ -354,14 +354,14 @@ def timeout_loop(stop_event: threading.Event):
 # ------------------------------------------------------------------ foreachBatch
 
 def enrich_and_flag(batch_df: DataFrame, meta_df: DataFrame) -> DataFrame:
-    """Bac 2a3: broadcast join metadata + quality_flag."""
+    """Bước 2–3: broadcast join metadata + quality_flag."""
     joined = batch_df.join(F.broadcast(meta_df), "sensor_id", "left")
     return joined.withColumn("quality_flag", spark_quality_flag(
         F.col("parameter"), F.col("units"), F.col("value"), F.col("event_time"), F.current_timestamp()))
 
 
 def station_aqi(ok_df: DataFrame) -> DataFrame:
-    """Bac 5: AQI tram = max aqi_instant theo (location_id, event_time), kAm chat trai."""
+    """Bước 5: AQI trạm = max aqi_instant theo (location_id, event_time), kèm chất trội."""
     return (ok_df.filter(F.col("aqi_instant").isNotNull())
             .groupBy("location_id", "event_time")
             .agg(F.max("aqi_instant").alias("station_aqi"),
@@ -383,7 +383,7 @@ def _process_batch(batch_df: DataFrame, batch_id: int):
             return
         now = datetime.now(timezone.utc)
 
-        # 1a2. Metadata + join
+        # 1–2. Metadata + join
         flagged = enrich_and_flag(batch_df, METADATA.get(spark))
         n_unmatched = flagged.filter(F.col("parameter").isNull()).count()
         if n_unmatched and METADATA.refresh_for_unknown(spark):
@@ -397,20 +397,20 @@ def _process_batch(batch_df: DataFrame, batch_id: int):
         flag_counts = {r["quality_flag"]: r["count"] for r in flagged.groupBy("quality_flag").count().collect()}
         logger.info("batch %d quality flags: %s", batch_id, flag_counts)
 
-        # 4. AQI tang chat (pandas UDF trAn executors)
+        # 4. AQI từng chất (pandas UDF trên executors)
         ok = (flagged.filter(F.col("quality_flag") == "OK")
               .withColumn("aqi_instant", aqi_instant_udf("parameter", "value", "units").cast("int"))
               .persist())
         readings = ok.select("location_id", "sensor_id", "parameter", "value", "units", "aqi_instant",
                              F.date_format("event_time", TS_FMT).alias("event_time"), "ingested_at").collect()
-        # 5. AQI tram, sap theo thai gian Aa Ap luat AAng tha ta
+        # 5. AQI trạm, sắp theo thời gian để áp luật đúng thứ tự
         stations = (station_aqi(ok)
                     .withColumn("event_time", F.date_format("event_time", TS_FMT))
                     .orderBy("event_time", "location_id").collect())
         ok.unpersist()
         flagged.unpersist()
 
-        # 6a9. Mat transaction
+        # 6–9. Một transaction
         with psycopg.connect(PG_DSN, row_factory=dict_row) as conn, conn.cursor() as cur:
             cur.executemany("""
                 INSERT INTO realtime.readings (location_id, sensor_id, parameter, value, units, aqi_instant,
@@ -432,7 +432,7 @@ def _process_batch(batch_df: DataFrame, batch_id: int):
                 state = states.get(loc, {"location_id": loc})
                 new_state, alert = decide(state, r["station_aqi"], r["event_time"])
                 if new_state is state:
-                    continue  # luat 1: ban Ao cA hn state
+                    continue  # luật 1: bản đo cũ hơn state
                 new_state["station_aqi"] = r["station_aqi"]
                 new_state["dominant_pollutant"] = r["dominant_pollutant"]
                 states[loc] = changed[loc] = new_state
@@ -464,7 +464,6 @@ def main():
                   .option("subscribe", TOPIC_MEASUREMENTS)
                   .option("startingOffsets", "latest")
                   .option("maxOffsetsPerTrigger", 10000)
-         .option("failOnDataLoss", "false")
                   .load())
 
     (build_query_a_df(raw_stream).writeStream.queryName("query_a_bronze")
@@ -490,4 +489,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

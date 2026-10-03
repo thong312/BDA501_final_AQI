@@ -1,10 +1,10 @@
-"""Chay DailyStatsMR cho mot ngay: tai Bronze + sensor_lookup tu MinIO, chay mrjob, ghi ket qua len
+"""Chạy DailyStatsMR cho một ngày: tải Bronze + sensor_lookup từ MinIO, chạy mrjob, ghi kết quả lên
 s3a://aq-lake/validation/mr_daily_stats/date=YYYY-MM-DD/part-00000.
 
-Mac dinh dung runner "local" cua mrjob (chay nhieu tien trinh map/reduce tren mot may, cung mo hinh
-Hadoop Streaming). Co cum Hadoop thi truyen --runner hadoop va input HDFS tuong ung.
+Mặc định dùng runner "local" của mrjob (chạy nhiều tiến trình map/reduce trên một máy, cùng mô hình
+Hadoop Streaming). Có cụm Hadoop thì truyền --runner hadoop và input HDFS tương ứng.
 
-Chay: python jobs/mapreduce/run_daily_stats.py --date 2026-09-26
+Chạy: python jobs/mapreduce/run_daily_stats.py --date 2026-09-26
 """
 import argparse
 import json
@@ -39,7 +39,7 @@ def s3_client():
 
 def download_bronze(s3, day: date, workdir: Path):
     files = []
-    for d in (day, day + timedelta(days=1)):  # ngay New York D nam trong ingest_date D va D+1
+    for d in (day, day + timedelta(days=1)):  # ngày New York D nằm trong ingest_date D và D+1
         prefix = f"{BRONZE_PREFIX}ingest_date={d}/"
         for page in s3.get_paginator("list_objects_v2").paginate(Bucket=BUCKET, Prefix=prefix):
             for obj in page.get("Contents", []):
@@ -63,11 +63,11 @@ def main():
         workdir = Path(tmp)
         inputs = download_bronze(s3, day, workdir)
         if not inputs:
-            logger.warning("Khong co Bronze cho %s", day)
+            logger.warning("Không có Bronze cho %s", day)
             return
         lookup = workdir / "sensor_lookup.json"
         s3.download_file(BUCKET, LOOKUP_KEY, str(lookup))
-        logger.info("MapReduce %s tren %d file Bronze", day, len(inputs))
+        logger.info("MapReduce %s trên %d file Bronze", day, len(inputs))
 
         job = DailyStatsMR(["-r", args.runner, "--lookup", str(lookup), "--date", str(day)] + inputs)
         lines = []
@@ -78,7 +78,7 @@ def main():
 
     out_key = f"{OUTPUT_PREFIX}date={day}/part-00000"
     s3.put_object(Bucket=BUCKET, Key=out_key, Body=("\n".join(lines) + "\n").encode("utf-8"))
-    logger.info("Da ghi %d khoa vao s3a://%s/%s", len(lines), BUCKET, out_key)
+    logger.info("Đã ghi %d khoá vào s3a://%s/%s", len(lines), BUCKET, out_key)
 
 
 if __name__ == "__main__":

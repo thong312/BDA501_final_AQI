@@ -1,16 +1,4 @@
-﻿"""AQ Dashboard - Flask API + Static HTML server.
-
-Endpoints:
-  GET /                          -> Dashboard HTML
-  GET /api/stations              -> All stations with latest status
-  GET /api/readings?hours=24     -> Recent readings (default 24h)
-  GET /api/aqi_hourly?hours=72   -> Hourly AQI by borough
-  GET /api/alerts?limit=50       -> Recent alerts
-  GET /api/daily_summary         -> Analytics daily summary
-  GET /api/cluster_profiles      -> K-Means cluster profiles
-  GET /api/region_stats          -> Analytics region stats
-  GET /api/overview              -> Dashboard overview stats
-"""
+"""AQ Dashboard - Flask API + Static HTML server."""
 
 import os
 import json
@@ -26,30 +14,26 @@ CORS(app)
 
 PG_DSN = os.getenv("PG_DSN", "postgresql://aq_user:aq_password@postgres:5432/aq")
 
-
 def get_conn():
     return psycopg.connect(PG_DSN, row_factory=dict_row)
 
-
-@app.route("/")
+@app.route(/)
 def index():
     return send_from_directory("static", "index.html")
 
-
-@app.route("/<path:path>")
+@app.route(/<path:path>)
 def static_files(path):
     return send_from_directory("static", path)
 
-
-@app.route("/api/overview")
+@app.route(/api/overview)
 def overview():
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute("SELECT count(*) AS cnt FROM realtime.stations")
+        cur.execute("SELECT count(*) AS cnt FROM realtime.station_status WHERE last_event_time IS NOT NULL")
         n_stations = cur.fetchone()["cnt"]
         cur.execute("SELECT count(*) AS cnt FROM realtime.readings")
         n_readings = cur.fetchone()["cnt"]
-        cur.execute("SELECT count(*) AS cnt FROM realtime.alerts")
+        cur.execute("SELECT count(*) AS cnt FROM realtime.alerts WHERE scope = 'region'")
         n_alerts = cur.fetchone()["cnt"]
         cur.execute("SELECT COALESCE(round(avg(station_aqi)), 0) AS avg_aqi, COALESCE(max(station_aqi), 0) AS max_aqi FROM realtime.station_status WHERE station_aqi IS NOT NULL")
         aqi_row = cur.fetchone()
@@ -65,22 +49,24 @@ def overview():
             "last_reading": ts_row["last_ts"].isoformat() if ts_row["last_ts"] else None,
         })
 
-
-@app.route("/api/stations")
+@app.route(/api/stations)
 def stations():
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute("SELECT s.location_id, s.name, s.lat, s.lon, s.borough, ss.station_aqi, ss.dominant_pollutant, ss.alerted_level, ss.last_event_time FROM realtime.stations s LEFT JOIN realtime.station_status ss ON s.location_id = ss.location_id ORDER BY s.borough, s.name")
+        cur.execute("SELECT s.location_id, s.name, s.lat, s.lon, s.borough, ss.station_aqi, ss.dominant_pollutant, ss.alerted_level, ss.last_event_time FROM realtime.stations s JOIN realtime.station_status ss ON s.location_id = ss.location_id WHERE ss.last_event_time IS NOT NULL ORDER BY s.borough, s.name")
         rows = cur.fetchall()
         for r in rows:
             if r.get("last_event_time"):
                 r["last_event_time"] = r["last_event_time"].isoformat()
         return jsonify(rows)
 
-
-@app.route("/api/readings")
+@app.route(/api/readings)
 def readings():
-    hours = int(request.args.get("hours", 24))
+    try:
+        hours = int(request.args.get("hours", 24))
+        if hours <= 0: hours = 24
+    except ValueError:
+        hours = 24
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute("SELECT r.location_id, s.name, s.borough, r.parameter, r.value, r.units, r.aqi_instant, r.event_time FROM realtime.readings r JOIN realtime.stations s ON r.location_id = s.location_id WHERE r.event_time >= now() - make_interval(hours => %(h)s) ORDER BY r.event_time DESC LIMIT 500", {"h": hours})
@@ -90,10 +76,13 @@ def readings():
                 r["event_time"] = r["event_time"].isoformat()
         return jsonify(rows)
 
-
-@app.route("/api/aqi_hourly")
+@app.route(/api/aqi_hourly)
 def aqi_hourly():
-    hours = int(request.args.get("hours", 72))
+    try:
+        hours = int(request.args.get("hours", 72))
+        if hours <= 0: hours = 72
+    except ValueError:
+        hours = 72
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute("SELECT borough, bucket, aqi_max, aqi_avg::int AS aqi_avg, n_readings FROM realtime.aqi_hourly_by_borough WHERE bucket >= now() - make_interval(hours => %(h)s) ORDER BY bucket", {"h": hours})
@@ -103,13 +92,16 @@ def aqi_hourly():
                 r["bucket"] = r["bucket"].isoformat()
         return jsonify(rows)
 
-
-@app.route("/api/alerts")
+@app.route(/api/alerts)
 def alerts():
-    limit = int(request.args.get("limit", 50))
+    try:
+        limit = int(request.args.get("limit", 50))
+        if limit <= 0: limit = 50
+    except ValueError:
+        limit = 50
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute("SELECT alert_id, scope, borough, trigger_location_id, aqi, level, prev_level, type, dominant_pollutant, event_time, created_at FROM realtime.alerts ORDER BY created_at DESC LIMIT %(lim)s", {"lim": limit})
+        cur.execute("SELECT alert_id, scope, borough, trigger_location_id, aqi, level, prev_level, type, dominant_pollutant, event_time, created_at FROM realtime.alerts WHERE scope = 'region' ORDER BY created_at DESC LIMIT %(lim)s", {"lim": limit})
         rows = cur.fetchall()
         for r in rows:
             for k in ("event_time", "created_at"):
@@ -117,20 +109,18 @@ def alerts():
                     r[k] = r[k].isoformat()
         return jsonify(rows)
 
-
-@app.route("/api/daily_summary")
+@app.route(/api/daily_summary)
 def daily_summary():
     with get_conn() as conn:
         cur = conn.cursor()
-        cur.execute("SELECT location_id, date_local, borough, aqi_daily, dominant_pollutant, level, cluster, cluster_name FROM analytics.daily_summary ORDER BY date_local DESC, borough LIMIT 1000")
+        cur.execute("SELECT location_id, date_local, borough, aqi_daily, dominant_pollutant, level, cluster, cluster_name FROM analytics.daily_summary WHERE borough IS NOT NULL ORDER BY date_local DESC, borough LIMIT 1000")
         rows = cur.fetchall()
         for r in rows:
             if r.get("date_local"):
                 r["date_local"] = r["date_local"].isoformat()
         return jsonify(rows)
 
-
-@app.route("/api/cluster_profiles")
+@app.route(/api/cluster_profiles)
 def cluster_profiles():
     with get_conn() as conn:
         cur = conn.cursor()
@@ -142,8 +132,7 @@ def cluster_profiles():
                     r[k] = float(v)
         return jsonify(rows)
 
-
-@app.route("/api/region_stats")
+@app.route(/api/region_stats)
 def region_stats():
     with get_conn() as conn:
         cur = conn.cursor()
@@ -153,7 +142,6 @@ def region_stats():
             if r.get("aqi_avg"):
                 r["aqi_avg"] = float(r["aqi_avg"])
         return jsonify(rows)
-
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5050, debug=False)

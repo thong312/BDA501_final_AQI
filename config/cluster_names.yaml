@@ -16,11 +16,11 @@ names_by_k:
     - {name: "Ngày ozone buổi chiều", description: "Đỉnh AQI buổi chiều, O3 chi phối"}
     - {name: "Ngày ô nhiễm diện rộng", description: "AQI cao, nhiều giờ vượt 100 (ví dụ khói cháy rừng)"}
   5:
-    - {name: "Ngày rất trong lành", description: "AQI rất thấp"}
-    - {name: "Ngày trong lành", description: "AQI thấp"}
-    - {name: "Ngày trung bình", description: "AQI mức Moderate"}
-    - {name: "Ngày ô nhiễm nhẹ", description: "Có vài giờ vượt 100"}
-    - {name: "Ngày ô nhiễm nặng", description: "Nhiều giờ vượt 100"}
+    - {name: "Trong lành (bụi chập tối)", description: "AQI thấp, bụi mịn cao lúc chập tối"}
+    - {name: "Trong lành (Ozone trưa)", description: "AQI thấp, đỉnh Ozone buổi trưa"}
+    - {name: "Trong lành (bụi rạng sáng)", description: "AQI thấp, bụi mịn cao lúc rạng sáng"}
+    - {name: "Ô nhiễm nhẹ", description: "AQI mức vừa, chủ yếu do bụi mịn"}
+    - {name: "Ô nhiễm nặng", description: "Nhiều giờ vượt ngưỡng 100"}
   6:
     - {name: "Ngày rất trong lành", description: "AQI rất thấp"}
     - {name: "Ngày trong lành", description: "AQI thấp"}

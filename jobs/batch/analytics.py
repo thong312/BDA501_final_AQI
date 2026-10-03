@@ -1,13 +1,13 @@
 """Spark SQL + KMeans, ghi schema analytics trong PostgreSQL (ARCHITECTURE 6.8).
 
-Spark SQL (ket qua -> reports/sql/*.csv, EXPLAIN FORMATTED -> reports/plans/*.txt):
-  q1_borough_bad_days_rank   xep hang borough theo so ngay aqi_daily > 100, theo nam
-  q2_borough_hour            AQI trung binh theo borough × hour_local (xu huong trong ngay)
-  q2_borough_month           AQI trung binh theo borough × month (mua)
-  q3_widespread_days         ngay co >= 50% so tram cung >= USG
+Spark SQL (kết quả -> reports/sql/*.csv, EXPLAIN FORMATTED -> reports/plans/*.txt):
+  q1_borough_bad_days_rank   xếp hạng borough theo số ngày aqi_daily > 100, theo năm
+  q2_borough_hour            AQI trung bình theo borough × hour_local (xu hướng trong ngày)
+  q2_borough_month           AQI trung bình theo borough × month (mùa)
+  q3_widespread_days         ngày có >= 50% số trạm cùng >= USG
 
-KMeans: VectorAssembler -> StandardScaler -> KMeans(k, seed=42), thu k = 2..7, chon theo silhouette
-(hoac --k). Model luu s3a://aq-lake/models/kmeans/vN/.
+KMeans: VectorAssembler -> StandardScaler -> KMeans(k, seed=42), thử k = 2..7, chọn theo silhouette
+(hoặc --k). Model lưu s3a://aq-lake/models/kmeans/vN/.
 """
 import argparse
 import csv
@@ -72,14 +72,14 @@ SQL = {
 }
 
 
-# ------------------------------------------------------------------ KMeans (ham thuan)
+# ------------------------------------------------------------------ KMeans (hàm thuần)
 
 def train_and_evaluate_kmeans(df_features: DataFrame, feature_cols, k_range=range(2, 8), fixed_k=None):
-    """Thu tung k, tra dict: best_k, model (PipelineModel), scores, centers (thang goc)."""
+    """Thử từng k, trả dict: best_k, model (PipelineModel), scores, centers (thang gốc)."""
     n = df_features.count()
     ks = [k for k in k_range if k < n]
     if not ks:
-        raise ValueError(f"Khong du du lieu cho KMeans: {n} dong")
+        raise ValueError(f"Không đủ dữ liệu cho KMeans: {n} dòng")
     evaluator = ClusteringEvaluator(featuresCol="features", predictionCol="cluster", metricName="silhouette")
     scores, models = [], {}
     for k in ks:
@@ -102,18 +102,18 @@ def train_and_evaluate_kmeans(df_features: DataFrame, feature_cols, k_range=rang
 
 
 def name_clusters(centers, feature_cols, names_cfg):
-    """Gan ten theo thu hang aqi_mean cua tam cum. Tra {cluster: (name, description)}."""
+    """Gán tên theo thứ hạng aqi_mean của tâm cụm. Trả {cluster: (name, description)}."""
     idx = list(feature_cols).index("aqi_mean")
     order = sorted(range(len(centers)), key=lambda c: centers[c][idx])
     names = (names_cfg.get("names_by_k") or {}).get(len(centers), [])
     out = {}
     for rank, cluster in enumerate(order):
         entry = names[rank] if rank < len(names) else {}
-        out[cluster] = (entry.get("name", f"Cum {cluster}"), entry.get("description", ""))
+        out[cluster] = (entry.get("name", f"Cụm {cluster}"), entry.get("description", ""))
     return out
 
 
-# ------------------------------------------------------------------ bang analytics
+# ------------------------------------------------------------------ bảng analytics
 
 def build_region_stats(df_summary: DataFrame) -> DataFrame:
     month = F.month("date_local")
@@ -157,7 +157,7 @@ def next_model_version(spark) -> str:
 
 
 def write_pg(df: DataFrame, table: str):
-    """Ghi de noi dung nhung giu nguyen DDL (TRUNCATE thay vi DROP)."""
+    """Ghi đè nội dung nhưng giữ nguyên DDL (TRUNCATE thay vì DROP)."""
     (df.write.format("jdbc")
      .option("url", os.getenv("PG_JDBC_URL", "jdbc:postgresql://postgres:5432/aq"))
      .option("dbtable", table)
@@ -166,7 +166,7 @@ def write_pg(df: DataFrame, table: str):
      .option("driver", "org.postgresql.Driver")
      .option("truncate", "true")
      .mode("overwrite").save())
-    logger.info("Da ghi %s", table)
+    logger.info("Đã ghi %s", table)
 
 
 def run_sql(spark):
@@ -182,7 +182,7 @@ def run_sql(spark):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--k", type=int, help="Ep chon k (sau khi xem silhouette + dien giai)")
+    parser.add_argument("--k", type=int, help="Ép chọn k (sau khi xem silhouette + diễn giải)")
     args = parser.parse_args()
     spark = create_spark_session("AQ_Analytics_ML")
 
@@ -202,7 +202,7 @@ def main():
     try:
         res = train_and_evaluate_kmeans(df_feats, FEATURES, fixed_k=args.k)
     except ValueError as e:
-        logger.warning("Bo qua KMeans: %s", e)
+        logger.warning("Bỏ qua KMeans: %s", e)
         res = None
 
     if res:
@@ -224,7 +224,7 @@ def main():
         model_path = next_model_version(spark)
         res["model"].write().overwrite().save(model_path)
         (ml_dir / "model_version.json").write_text(json.dumps({"path": model_path, "k": res["best_k"]}))
-        logger.info("KMeans k=%d luu tai %s", res["best_k"], model_path)
+        logger.info("KMeans k=%d lưu tại %s", res["best_k"], model_path)
         df_names = spark.createDataFrame([(c, n[0]) for c, n in names.items()], "cluster int, cluster_name string")
         preds = preds.join(F.broadcast(df_names), "cluster", "left")
     else:
@@ -240,7 +240,7 @@ def main():
     write_pg(build_region_stats(df_summary), "analytics.region_stats")
     if df_profiles is not None:
         write_pg(df_profiles, "analytics.cluster_profiles")
-    logger.info("Hoan tat analytics: %d station-days", df_summary.count())
+    logger.info("Hoàn tất analytics: %d station-days", df_summary.count())
 
 
 if __name__ == "__main__":

@@ -19,7 +19,7 @@ def bronze_line(offset=0, **data):
 
 def test_mapper_uses_new_york_date_and_lookup():
     key, value = map_record(bronze_line(), LOOKUP, BBOX)
-    # 02:00Z ngay 27 = 22:00 ngay 26 o New York (EDT)
+    # 02:00Z ngày 27 = 22:00 ngày 26 ở New York (EDT)
     assert key == [101, "pm25", "2026-09-26"]
     assert value == [1, "2026-09-27T02:00:00Z", "2026-09-27T02:05:00Z", 0, 40.0, "µg/m³"]
 
@@ -27,9 +27,9 @@ def test_mapper_uses_new_york_date_and_lookup():
 def test_mapper_filters_same_rules_as_spark():
     assert map_record(bronze_line(value=-1.0), LOOKUP, BBOX) is None              # NEGATIVE
     assert map_record(bronze_line(value=5000.0), LOOKUP, BBOX) is None            # OUT_OF_RANGE
-    assert map_record(bronze_line(value="20"), LOOKUP, BBOX) is None              # khong phai so
+    assert map_record(bronze_line(value="20"), LOOKUP, BBOX) is None              # không phải số
     assert map_record(bronze_line(sensor_id=2), LOOKUP, BBOX) is None             # NO_METADATA
-    assert map_record(bronze_line(lat=34.05, lon=-118.2), LOOKUP, BBOX) is None   # ngoai bbox
+    assert map_record(bronze_line(lat=34.05, lon=-118.2), LOOKUP, BBOX) is None   # ngoài bbox
     assert map_record(bronze_line(), LOOKUP, BBOX, target_date="2026-09-27") is None
     assert map_record("not json", LOOKUP, BBOX) is None
 
@@ -43,7 +43,7 @@ def test_reducer_dedupes_keeping_latest_ingest():
     key = [101, "pm25", "2026-09-26"]
     vals = [
         [1, "2026-09-27T02:00:00Z", "2026-09-27T02:05:00Z", 5, 40.0, "µg/m³"],
-        [1, "2026-09-27T02:00:00Z", "2026-09-27T02:15:00Z", 9, 42.0, "µg/m³"],  # ban moi hon
+        [1, "2026-09-27T02:00:00Z", "2026-09-27T02:15:00Z", 9, 42.0, "µg/m³"],  # bản mới hơn
         [1, "2026-09-27T03:00:00Z", "2026-09-27T03:05:00Z", 7, 10.0, "µg/m³"],
     ]
     stats = reduce_values(key, vals)

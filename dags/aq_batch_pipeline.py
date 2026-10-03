@@ -1,7 +1,7 @@
-"""Batch hang ngay (ARCHITECTURE muc 3, 6.4): clean -> (mapreduce || aggregate) -> validate -> analytics.
+"""Batch hằng ngày (ARCHITECTURE mục 3, 6.4): clean -> (mapreduce || aggregate) -> validate -> analytics.
 
-Cac task goi `docker exec` vao container spark-master, nen worker Airflow can docker CLI va
-quyen truy cap /var/run/docker.sock. Khong co Airflow thi dung `make batch DATE=...` hoac run_batch.ps1.
+Các task gọi `docker exec` vào container spark-master, nên worker Airflow cần docker CLI và
+quyền truy cập /var/run/docker.sock. Không có Airflow thì dùng `make batch DATE=...` hoặc run_batch.ps1.
 """
 from datetime import datetime, timedelta
 
@@ -23,8 +23,8 @@ default_args = {
 with DAG(
     "aq_daily_batch_pipeline",
     default_args=default_args,
-    description="Bronze -> Silver -> Gold -> analytics, kem MapReduce doi chieu",
-    schedule_interval="0 2 * * *",   # 02:00 xu ly ngay hom truoc ({{ ds }})
+    description="Bronze -> Silver -> Gold -> analytics, kèm MapReduce đối chiếu",
+    schedule_interval="0 2 * * *",   # 02:00 xử lý ngày hôm trước ({{ ds }})
     start_date=datetime(2026, 9, 26),
     catchup=False,
     tags=["aq", "spark", "batch"],

@@ -1,7 +1,7 @@
-"""Bom ban do thu vao aq.openaq.measurements.v1 (demo canh bao / replay).
+"""Bơm bản đo thử vào aq.openaq.measurements.v1 (demo cảnh báo / replay).
 
-Chay trong container: docker exec -w /opt/aq spark-master python3 scripts/inject_test_measurements.py [ISO_BASE_TIME]
-Can metadata cua cac sensor 3916, 3917, 5001, 5002, 6001 trong aq.openaq.sensors.v1.
+Chạy trong container: docker exec -w /opt/aq spark-master python3 scripts/inject_test_measurements.py [ISO_BASE_TIME]
+Cần metadata của các sensor 3916, 3917, 5001, 5002, 6001 trong aq.openaq.sensors.v1.
 """
 import json, sys
 from datetime import datetime, timedelta, timezone

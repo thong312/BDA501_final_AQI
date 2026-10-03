@@ -18,7 +18,7 @@ def test_pm25_exact_boundaries():
 
 
 def test_pm25_truncates_not_rounds():
-    # 9.09 cat thanh 9.0 -> 50 (lam tron se ra 9.1 -> 51)
+    # 9.09 cắt thành 9.0 -> 50 (làm tròn sẽ ra 9.1 -> 51)
     assert compute_aqi("pm25", 9.09, "µg/m³") == 50
 
 
@@ -40,12 +40,12 @@ def test_beyond_index_extrapolates():
 
 def test_units_alias():
     assert compute_aqi("pm25", 20.0, "ug/m3") == 71
-    assert compute_aqi("pm25", 20.0, "μg/m³") == 71  # chu mu Hy Lap
+    assert compute_aqi("pm25", 20.0, "μg/m³") == 71  # chữ mu Hy Lạp
 
 
 def test_o3_ppm_8h_and_instant():
     assert compute_aqi("o3", 0.060, "ppm", averaging="8h") == 67
-    # 0.150 ppm vuot bang 8h theo muc USG; instant lay max(8h, 1h)
+    # 0.150 ppm vượt bảng 8h theo mức USG; instant lấy max(8h, 1h)
     assert compute_aqi("o3", 0.150, "ppm") == max(
         compute_aqi("o3", 0.150, "ppm", averaging="8h"), 132)
 

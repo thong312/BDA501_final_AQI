@@ -1,7 +1,7 @@
-"""Doi chieu MapReduce voi Spark (ARCHITECTURE 6.7).
+"""Đối chiếu MapReduce với Spark (ARCHITECTURE 6.7).
 
-Tinh lai tu Silver dung cac chi so cua MapReduce theo cung khoa (location_id, parameter, date_local),
-full outer join voi output MR, ghi reports/validation/YYYY-MM-DD.json. Exit code 1 neu co lech.
+Tính lại từ Silver đúng các chỉ số của MapReduce theo cùng khoá (location_id, parameter, date_local),
+full outer join với output MR, ghi reports/validation/YYYY-MM-DD.json. Exit code 1 nếu có lệch.
 """
 import argparse
 import json
@@ -84,7 +84,7 @@ def main():
     mr_path = f"{VALIDATION_PATH}mr_daily_stats/date={day}/"
     found, _ = existing_paths(spark, [silver_part, mr_path])
     if len(found) < 2:
-        logger.error("Thieu du lieu de doi chieu (tim thay: %s)", found)
+        logger.error("Thiếu dữ liệu để đối chiếu (tìm thấy: %s)", found)
         sys.exit(1)
 
     df_silver = (spark.read.option("basePath", SILVER_PATH).parquet(silver_part))
@@ -94,7 +94,7 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     out = out_dir / f"{day}.json"
     out.write_text(json.dumps(report, indent=2, default=str), encoding="utf-8")
-    logger.info("Doi chieu %s: %s (%s)", day, report["status"], out)
+    logger.info("Đối chiếu %s: %s (%s)", day, report["status"], out)
     if report["status"] != "PASS":
         sys.exit(1)
 

@@ -12,7 +12,7 @@ SCHEMA = ("location_id int, location_name string, lat double, lon double, boroug
 
 
 def silver(spark, hours=20):
-    # 2026-09-26 04:00Z = 00:00 New York; moi gio PM2.5 = 20.0 va O3 = 0.060 ppm
+    # 2026-09-26 04:00Z = 00:00 New York; mỗi giờ PM2.5 = 20.0 và O3 = 0.060 ppm
     start = datetime(2026, 9, 26, 4)
     rows = []
     for h in range(hours):
@@ -34,13 +34,13 @@ def test_fact_daily_aqi_epa(spark):
     daily = build_fact_daily_aqi(build_fact_hourly(silver(spark))).collect()
     assert len(daily) == 1
     d = daily[0]
-    # PM2.5 trung binh 24h ≈ 20.05 -> 71; O3 max trung binh 8h = 0.060 -> 67
+    # PM2.5 trung bình 24h ≈ 20.05 -> 71; O3 max trung bình 8h = 0.060 -> 67
     assert d["aqi_daily"] == 71 and d["dominant_pollutant"] == "pm25" and d["level"] == "MODERATE"
 
 
 def test_pm25_needs_18_hours(spark):
     daily = build_fact_daily_aqi(build_fact_hourly(silver(spark, hours=10))).collect()
-    assert daily[0]["dominant_pollutant"] == "o3"  # PM2.5 khong du gio nen khong tinh
+    assert daily[0]["dominant_pollutant"] == "o3"  # PM2.5 không đủ giờ nên không tính
 
 
 def test_dim_region_and_cluster_features(spark):

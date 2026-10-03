@@ -24,13 +24,13 @@ def rec(**over):
 def test_transform_silver(spark):
     df = parse_bronze(bronze(spark, [
         rec(),
-        rec(value=25.0, ingested_at="2026-09-27T02:10:00Z"),        # trung, ban moi hon -> giu
+        rec(value=25.0, ingested_at="2026-09-27T02:10:00Z"),        # trùng, bản mới hơn -> giữ
         rec(value=-5.0, datetime_utc="2026-09-27T03:00:00Z"),       # NEGATIVE
         rec(value=5000.0, datetime_utc="2026-09-27T01:00:00Z"),     # OUT_OF_RANGE
         rec(sensor_id=2, datetime_utc="2026-09-27T01:00:00Z"),      # NO_METADATA
-        rec(datetime_utc="2026-09-26T12:00:00Z", ingested_at="2026-09-26T18:00:00Z"),  # STALE: giu
-        rec(datetime_utc="2026-09-27T05:00:00Z"),                   # 01:00 ngay 27 NY -> ngoai ngay
-        rec(lat=34.05, lon=-118.24, datetime_utc="2026-09-26T20:00:00Z"),  # ngoai bbox
+        rec(datetime_utc="2026-09-26T12:00:00Z", ingested_at="2026-09-26T18:00:00Z"),  # STALE: giữ
+        rec(datetime_utc="2026-09-27T05:00:00Z"),                   # 01:00 ngày 27 NY -> ngoài ngày
+        rec(lat=34.05, lon=-118.24, datetime_utc="2026-09-26T20:00:00Z"),  # ngoài bbox
     ]))
     meta = prepare_metadata(spark.createDataFrame(
         [(1, "pm25", "µg/m³", "Queens College", 40.73, -73.82)],
@@ -40,7 +40,7 @@ def test_transform_silver(spark):
 
     assert [(r["value"], r["quality_flag"]) for r in rows] == [(20.0, "STALE"), (25.0, "OK")]
     ok = rows[1]
-    assert str(ok["date_local"]) == "2026-09-26" and ok["hour_local"] == 22  # gio New York
+    assert str(ok["date_local"]) == "2026-09-26" and ok["hour_local"] == 22  # giờ New York
     assert ok["parameter"] == "pm25" and ok["location_name"] == "Queens College"
     assert ok["borough"] == "Queens"
     assert (ok["year"], ok["month"]) == (2026, 9)

@@ -1,8 +1,8 @@
 """Poller OpenAQ v3 -> Kafka (ARCHITECTURE 6.1).
 
-Hai vong lap:
-1. Metadata: khi khoi dong + moi 24h, publish moi sensor vao aq.openaq.sensors.v1 (key sensor_id).
-2. Ban do: moi POLL_INTERVAL_SEC, /locations/{id}/latest -> measurements hoac DLQ.
+Hai vòng lặp:
+1. Metadata: khi khởi động + mỗi 24h, publish mỗi sensor vào aq.openaq.sensors.v1 (key sensor_id).
+2. Bản đo: mỗi POLL_INTERVAL_SEC, /locations/{id}/latest -> measurements hoặc DLQ.
 """
 import logging
 import os
@@ -26,7 +26,7 @@ BBOX = os.getenv("NYC_BBOX", "-74.26,40.49,-73.70,40.92")
 METADATA_INTERVAL = 24 * 3600
 METADATA_RETRY_SEC = 300
 MAX_RETRIES = 5
-# OpenAQ gioi han 60 request/phut -> gian cach toi thieu giua 2 request
+# OpenAQ giới hạn 60 request/phút -> giãn cách tối thiểu giữa 2 request
 MIN_REQUEST_GAP_SEC = 1.1
 
 TOPIC_SENSORS = "aq.openaq.sensors.v1"
@@ -44,7 +44,7 @@ session = requests.Session()
 if API_KEY:
     session.headers["X-API-Key"] = API_KEY
 
-# location_id -> (lat, lon); ghi boi vong metadata, doc boi vong ban do
+# location_id -> (lat, lon); ghi bởi vòng metadata, đọc bởi vòng bản đo
 locations = {}
 locations_lock = threading.Lock()
 metadata_ready = threading.Event()
@@ -71,7 +71,7 @@ def _throttle():
 
 
 def api_get(path, params=None):
-    """GET co retry + exponential backoff cho 429/5xx/loi mang; ton trong header rate limit."""
+    """GET có retry + exponential backoff cho 429/5xx/lỗi mạng; tôn trọng header rate limit."""
     url = f"{API_BASE}{path}"
     for attempt in range(MAX_RETRIES):
         _throttle()
@@ -111,7 +111,7 @@ def fetch_metadata() -> bool:
     new_locations = {}
     n_sensors = 0
     for loc in results:
-        # Publish lai ke ca khi khong doi (topic compacted, Spark doc ban moi nhat)
+        # Publish lại kể cả khi không đổi (topic compacted, Spark đọc bản mới nhất)
         for s in parse_sensor_metadata(loc):
             producer.produce(TOPIC_SENSORS, key=str(s.sensor_id).encode(),
                              value=s.model_dump_json().encode(), on_delivery=_delivery_report)

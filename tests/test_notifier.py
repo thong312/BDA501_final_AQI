@@ -33,4 +33,4 @@ def test_seen_alerts_dedupes_and_is_bounded():
     seen = SeenAlerts(capacity=2)
     assert seen.check_and_add("a") and not seen.check_and_add("a")
     assert seen.check_and_add("b") and seen.check_and_add("c")
-    assert seen.check_and_add("a")  # "a" da bi day ra khoi bo nho
+    assert seen.check_and_add("a")  # "a" đã bị đẩy ra khỏi bộ nhớ

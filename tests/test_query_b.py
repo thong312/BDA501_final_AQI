@@ -1,4 +1,4 @@
-"""Test Spark cua Query B (chay trong container: make test-spark)."""
+"""Test Spark của Query B (chạy trong container: make test-spark)."""
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -39,7 +39,7 @@ def test_join_flag_aqi_and_station_max(spark):
         msg(1, 10, 60.0), msg(2, 10, 0.03), msg(1, 10, -1.0, "2026-09-26T13:00:00Z"), msg(99, 10, 5.0)]))
     flagged = enrich_and_flag(batch, meta)
     flags = sorted(r["quality_flag"] for r in flagged.collect())
-    # event_time 2026-09-26 cu hon now > 3h: hai ban do hop le bi STALE, tram la -> NO_METADATA
+    # event_time 2026-09-26 cũ hơn now > 3h: hai bản đo hợp lệ bị STALE, trạm lạ -> NO_METADATA
     assert flags.count("NO_METADATA") == 1 and flags.count("NEGATIVE") == 1
 
     ok = (flagged.filter("quality_flag IN ('OK', 'STALE')")

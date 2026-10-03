@@ -1,4 +1,4 @@
-"""Phan thuan cua Streaming query B: dung ban ghi alert va quan sat cap vung."""
+"""Phần thuần của Streaming query B: dựng bản ghi alert và quan sát cấp vùng."""
 from datetime import datetime, timezone
 from typing import Iterable, Optional
 
@@ -7,7 +7,7 @@ from common.aqi import UNKNOWN_LEVEL
 
 
 def region_alert_id(borough: str, event_time, level_name: str) -> str:
-    """Tat dinh tu borough + gio event + level (ARCHITECTURE 5.1), vi du Queens_2026092614_UNHEALTHY."""
+    """Tất định từ borough + giờ event + level (ARCHITECTURE 5.1), ví dụ Queens_2026092614_UNHEALTHY."""
     ev = to_datetime(event_time).astimezone(timezone.utc)
     return f"{borough.replace(' ', '')}_{ev:%Y%m%d%H}_{level_name}"
 
@@ -19,7 +19,7 @@ def station_alert_id(location_id: int, event_time, level_name: str) -> str:
 
 def build_alert_record(alert: dict, scope: str, borough: Optional[str], location_id: Optional[int],
                        dominant_pollutant: Optional[str], created_at: Optional[datetime] = None) -> dict:
-    """Alert tu decide()/check_timeout() -> ban ghi theo schema aq.alerts.level-changed.v1."""
+    """Alert từ decide()/check_timeout() -> bản ghi theo schema aq.alerts.level-changed.v1."""
     ev = to_datetime(alert["event_time"])
     alert_id = (region_alert_id(borough, ev, alert["level"]) if scope == "region"
                 else station_alert_id(location_id, ev, alert["level"]))
@@ -39,7 +39,7 @@ def build_alert_record(alert: dict, scope: str, borough: Optional[str], location
 
 
 def alert_to_message(record: dict) -> dict:
-    """Ban ghi alert -> JSON message (datetime thanh chuoi ISO UTC)."""
+    """Bản ghi alert -> JSON message (datetime thành chuỗi ISO UTC)."""
     msg = dict(record)
     for k in ("event_time", "created_at"):
         msg[k] = to_datetime(msg[k]).astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -47,15 +47,15 @@ def alert_to_message(record: dict) -> dict:
 
 
 def region_observation(stations: Iterable[dict], region_level: int, now, cfg: Optional[dict] = None):
-    """Quan sat cap vung tu state cac tram cung borough.
+    """Quan sát cấp vùng từ state các trạm cùng borough.
 
-    stations: dict co location_id, alerted_level, station_aqi, dominant_pollutant, last_event_time.
-    Muc vung = max alerted_level cac tram con du lieu (khong stale, khong UNKNOWN).
-    Tra ve dict (level, aqi, trigger_location_id, dominant_pollutant, event_time, blocked_down)
-    hoac None neu vung khong con tram nao co du lieu.
+    stations: dict có location_id, alerted_level, station_aqi, dominant_pollutant, last_event_time.
+    Mức vùng = max alerted_level các trạm còn dữ liệu (không stale, không UNKNOWN).
+    Trả về dict (level, aqi, trigger_location_id, dominant_pollutant, event_time, blocked_down)
+    hoặc None nếu vùng không còn trạm nào có dữ liệu.
 
-    blocked_down = True khi co tram da mat du lieu (UNKNOWN/stale): vung khong duoc ha muc
-    vi ly do mat du lieu (luat 7 — khong gui RECOVERED khi mat du lieu).
+    blocked_down = True khi có trạm đã mất dữ liệu (UNKNOWN/stale): vùng không được hạ mức
+    vì lý do mất dữ liệu (luật 7 — không gửi RECOVERED khi mất dữ liệu).
     """
     cfg = cfg or CONFIG
     now = to_datetime(now)

@@ -23,15 +23,15 @@ up:
 down:
 	docker compose down
 
-# Xoa ca volume (MinIO, Postgres) de init lai DDL
+# Xoá cả volume (MinIO, Postgres) để init lại DDL
 reset:
 	docker compose down -v
 
-# Unit test tren host; test can pyspark/airflow tu skip neu thieu
+# Unit test trên host; test cần pyspark/airflow tự skip nếu thiếu
 test:
 	python -m pytest -q tests
 
-# Toan bo test, chay trong container Spark (co Java + pyspark)
+# Toàn bộ test, chạy trong container Spark (có Java + pyspark)
 test-spark:
 	docker exec -i -w /opt/aq spark-master python3 -m pytest -q tests --ignore=tests/test_dag.py
 
@@ -41,7 +41,7 @@ streaming:
 backfill:
 	$(SUBMIT) /opt/aq/jobs/batch/backfill_archive.py
 
-# Batch hang ngay M7 -> M10: clean -> (mapreduce || gold) -> validate -> analytics
+# Batch hằng ngày M7 -> M10: clean -> (mapreduce || gold) -> validate -> analytics
 batch: clean-silver mapreduce gold validate analytics
 
 clean-silver:

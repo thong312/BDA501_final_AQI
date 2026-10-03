@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8">
@@ -398,13 +398,7 @@ async function loadClusters() {
     return;
   }
   
-  const getPolicy = (c) => {
-    if (c.aqi_mean < 40) return "Duy trì quy hoạch hiện tại, khuyến khích hoạt động ngoài trời.";
-    if (c.peak_hour >= 16 && c.peak_hour <= 19) return "Cấm xe tải và hạn chế xe cá nhân vào giờ tan tầm chiều (16h-19h).";
-    if (c.pm25_o3_ratio > 1.5) return "Thắt chặt kiểm tra khói bụi từ các công trường xây dựng.";
-    if (c.aqi_max > 100) return "Gửi tin nhắn SMS cảnh báo người già/trẻ em hạn chế ra đường.";
-    return "Tăng cường trồng cây xanh và giám sát.";
-  };
+  
 
   const clusterColors = ['#10b981','#f59e0b','#f97316','#ef4444','#a855f7'];
   let html = '';
@@ -422,10 +416,7 @@ async function loadClusters() {
     html += '    <div class="cluster-stat"><span class="stat-label">Peak Hour</span><span class="stat-value">' + c.peak_hour + ':00</span></div>';
     html += '    <div class="cluster-stat"><span class="stat-label">PM2.5/O3</span><span class="stat-value">' + c.pm25_o3_ratio + '</span></div>';
     html += '  </div>';
-    html += '  <div class="cluster-policy" style="margin-top: 15px; padding: 12px; background: rgba(56, 189, 248, 0.1); border-left: 3px solid #38bdf8; font-size: 0.85rem; color: #bae6fd; border-radius: 0 4px 4px 0;">';
-    html += '    <strong style="color: #38bdf8; display:block; margin-bottom: 5px;">💡 Đề xuất Chính sách ứng dụng:</strong>';
-    html += '    ' + getPolicy(c);
-    html += '  </div>';
+    html += '  ';
     html += '</div>';
   });
   grid.innerHTML = html;

@@ -1,4 +1,4 @@
-"""Bbox NYC va gan borough bang point-in-polygon (config/nyc_boroughs.geojson)."""
+"""Bbox NYC và gán borough bằng point-in-polygon (config/nyc_boroughs.geojson)."""
 import json
 from typing import Optional, Tuple
 
@@ -38,7 +38,7 @@ _BOROUGHS = None
 
 
 def get_borough(lat, lon) -> Optional[str]:
-    """Ten borough chua diem; None neu ngoai NYC (bbox co ca mot phan New Jersey)."""
+    """Tên borough chứa điểm; None nếu ngoài NYC (bbox có cả một phần New Jersey)."""
     global _BOROUGHS
     if lat is None or lon is None:
         return None
