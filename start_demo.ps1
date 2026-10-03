@@ -10,7 +10,7 @@ Write-Host "Dang doi 25 giay de Spark Streaming san sang hung du lieu..." -Foreg
 Start-Sleep -Seconds 60
 
 Write-Host ">>> BUOC 3: BOM DU LIEU GIA LAP VAO KAFKA..." -ForegroundColor Green
-docker exec -i spark-master python3 scripts/inject_test_measurements.py
+docker exec -i spark-master python3 scripts/inject_from_csv.py
 
 Write-Host ">>> HOAN TAT! Hay mo Telegram va Dashboard len de xem canh bao!" -ForegroundColor Red
 Write-Host "(De dung Streaming, hay sang cua so moi kia va an Ctrl+C)"
