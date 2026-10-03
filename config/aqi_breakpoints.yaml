@@ -1,7 +1,83 @@
-pm25:
-  - {c_low: 0.0, c_high: 9.0, i_low: 0, i_high: 50}
-  - {c_low: 9.1, c_high: 35.4, i_low: 51, i_high: 100}
-  - {c_low: 35.5, c_high: 55.4, i_low: 101, i_high: 150}
-  - {c_low: 55.5, c_high: 125.4, i_low: 151, i_high: 200}
-  - {c_low: 125.5, c_high: 225.4, i_low: 201, i_high: 300}
-  - {c_low: 225.5, c_high: 500.4, i_low: 301, i_high: 500}
+# Bảng breakpoint AQI theo EPA Technical Assistance Document for the Reporting of
+# Daily Air Quality (AQI), bản cập nhật tháng 5/2024 (PM2.5 theo NAAQS 2024).
+#
+# Mỗi chất:
+#   units:    đơn vị của bảng; common/aqi.py quy đổi đơn vị OpenAQ về đơn vị này
+#   decimals: số chữ số giữ lại (EPA yêu cầu CẮT, không làm tròn) trước khi tra bảng
+#   breakpoints: [C_lo, C_hi, I_lo, I_hi]
+#
+# Đối chiếu lại với bảng 6 của TAD trước khi nộp báo cáo.
+
+pm25:            # trung bình 24h
+  units: ug/m3
+  decimals: 1
+  breakpoints:
+    - [0.0,   9.0,   0,   50]
+    - [9.1,   35.4,  51,  100]
+    - [35.5,  55.4,  101, 150]
+    - [55.5,  125.4, 151, 200]
+    - [125.5, 225.4, 201, 300]
+    - [225.5, 325.4, 301, 500]
+
+pm10:            # trung bình 24h
+  units: ug/m3
+  decimals: 0
+  breakpoints:
+    - [0,   54,  0,   50]
+    - [55,  154, 51,  100]
+    - [155, 254, 101, 150]
+    - [255, 354, 151, 200]
+    - [355, 424, 201, 300]
+    - [425, 604, 301, 500]
+
+o3_8h:           # trung bình trượt 8h; không định nghĩa AQI > 300 (dùng o3_1h)
+  units: ppm
+  decimals: 3
+  breakpoints:
+    - [0.000, 0.054, 0,   50]
+    - [0.055, 0.070, 51,  100]
+    - [0.071, 0.085, 101, 150]
+    - [0.086, 0.105, 151, 200]
+    - [0.106, 0.200, 201, 300]
+
+o3_1h:           # trung bình 1h; chỉ định nghĩa từ mức USG trở lên
+  units: ppm
+  decimals: 3
+  breakpoints:
+    - [0.125, 0.164, 101, 150]
+    - [0.165, 0.204, 151, 200]
+    - [0.205, 0.404, 201, 300]
+    - [0.405, 0.604, 301, 500]
+
+no2:             # trung bình 1h
+  units: ppb
+  decimals: 0
+  breakpoints:
+    - [0,    53,   0,   50]
+    - [54,   100,  51,  100]
+    - [101,  360,  101, 150]
+    - [361,  649,  151, 200]
+    - [650,  1249, 201, 300]
+    - [1250, 2049, 301, 500]
+
+so2:             # trung bình 1h (AQI > 200 theo EPA dùng trung bình 24h; ở đây xấp xỉ bằng 1h)
+  units: ppb
+  decimals: 0
+  breakpoints:
+    - [0,   35,   0,   50]
+    - [36,  75,   51,  100]
+    - [76,  185,  101, 150]
+    - [186, 304,  151, 200]
+    - [305, 604,  201, 300]
+    - [605, 1004, 301, 500]
+
+co:              # trung bình trượt 8h
+  units: ppm
+  decimals: 1
+  breakpoints:
+    - [0.0,  4.4,  0,   50]
+    - [4.5,  9.4,  51,  100]
+    - [9.5,  12.4, 101, 150]
+    - [12.5, 15.4, 151, 200]
+    - [15.5, 30.4, 201, 300]
+    - [30.5, 50.4, 301, 500]

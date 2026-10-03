@@ -1,38 +1,57 @@
+from datetime import date, datetime, timedelta
+
 import pytest
-from pyspark.sql import SparkSession
-import sys
-from pathlib import Path
 
-sys.path.append(str(Path(__file__).parent.parent))
-from jobs.batch.aggregate_silver_to_gold import build_dim_station, build_fact_hourly, build_fact_daily_aqi
+pytest.importorskip("pyspark")
+from jobs.batch.aggregate_silver_to_gold import (build_cluster_features, build_dim_station,  # noqa: E402
+                                                  build_fact_daily_aqi, build_fact_hourly,
+                                                  build_mart_region_daily)
 
-@pytest.fixture(scope="session")
-def spark():
-    return (SparkSession.builder.master("local[1]").appName("pytest-spark").getOrCreate())
+SCHEMA = ("location_id int, location_name string, lat double, lon double, borough string, "
+          "parameter string, units string, value double, event_time timestamp")
 
-def test_gold_aggregation(spark):
-    data = [
-        (101, "Test Station", 40.7, -73.9, "Queens", "pm25", 20.0, "µg/m³", "2026-09-26T14:00:00Z", "2026-09-26", 10),
-        (101, "Test Station", 40.7, -73.9, "Queens", "pm25", 40.0, "µg/m³", "2026-09-26T15:00:00Z", "2026-09-26", 11),
-        (101, "Test Station", 40.7, -73.9, "Queens", "o3", 0.05, "ppm", "2026-09-26T14:30:00Z", "2026-09-26", 10)
-    ]
-    schema = ["location_id", "location_name", "lat", "lon", "borough", "parameter", "value", "units", "datetime_utc", "date_local", "hour_local"]
-    df_silver = spark.createDataFrame(data, schema)
-    
-    # Test Dim Station
-    df_dim = build_dim_station(df_silver)
-    res_dim = df_dim.collect()[0]
-    assert "pm25" in res_dim["parameters"]
-    assert "o3" in res_dim["parameters"]
-    
-    # Test Fact Hourly
-    df_hourly = build_fact_hourly(df_silver)
-    res_hourly = df_hourly.filter(df_hourly.parameter == "pm25").orderBy("hour_utc").collect()
-    assert len(res_hourly) == 2
-    assert res_hourly[0]["hourly_value"] == 20.0
-    
-    # Test Fact Daily AQI
-    df_daily = build_fact_daily_aqi(df_hourly)
-    res_daily = df_daily.collect()[0]
-    assert res_daily["dominant_pollutant"] == "pm25" # Do nồng độ pm25 quy ra AQI cao hơn o3
-    assert res_daily["level"] in ["Good", "Moderate", "USG", "Unhealthy", "Very Unhealthy", "Hazardous"]
+
+def silver(spark, hours=20):
+    # 2026-09-26 04:00Z = 00:00 New York; mỗi giờ PM2.5 = 20.0 và O3 = 0.060 ppm
+    start = datetime(2026, 9, 26, 4)
+    rows = []
+    for h in range(hours):
+        t = start + timedelta(hours=h)
+        rows.append((101, "A", 40.73, -73.82, "Queens", "pm25", "µg/m³", 20.0, t))
+        rows.append((101, "A", 40.73, -73.82, "Queens", "o3", "ppm", 0.060, t))
+    rows.append((101, "A", 40.73, -73.82, "Queens", "pm25", "µg/m³", 22.0, start + timedelta(minutes=30)))
+    return spark.createDataFrame(rows, SCHEMA)
+
+
+def test_fact_hourly(spark):
+    hourly = build_fact_hourly(silver(spark)).filter("parameter = 'pm25'").orderBy("hour_utc").collect()
+    assert len(hourly) == 20
+    assert hourly[0]["value_avg"] == 21.0 and hourly[0]["n_readings"] == 2
+    assert str(hourly[0]["date_local"]) == "2026-09-26" and hourly[0]["hour_local"] == 0
+
+
+def test_fact_daily_aqi_epa(spark):
+    daily = build_fact_daily_aqi(build_fact_hourly(silver(spark))).collect()
+    assert len(daily) == 1
+    d = daily[0]
+    # PM2.5 trung bình 24h ≈ 20.05 -> 71; O3 max trung bình 8h = 0.060 -> 67
+    assert d["aqi_daily"] == 71 and d["dominant_pollutant"] == "pm25" and d["level"] == "MODERATE"
+
+
+def test_pm25_needs_18_hours(spark):
+    daily = build_fact_daily_aqi(build_fact_hourly(silver(spark, hours=10))).collect()
+    assert daily[0]["dominant_pollutant"] == "o3"  # PM2.5 không đủ giờ nên không tính
+
+
+def test_dim_region_and_cluster_features(spark):
+    df = silver(spark)
+    dim = build_dim_station(df)
+    d = dim.collect()[0]
+    assert d["parameters"] == ["o3", "pm25"] and d["borough"] == "Queens"
+    hourly = build_fact_hourly(df)
+    region = build_mart_region_daily(build_fact_daily_aqi(hourly), dim).collect()[0]
+    assert region["n_stations"] == 1 and region["aqi_max"] == 71
+    feats = build_cluster_features(hourly).collect()[0]
+    assert feats["n_hours"] == 20 and feats["hours_over_100"] == 0
+    assert 0.0 < feats["pm25_o3_ratio"] < 1.0
+    assert feats["date_local"] == date(2026, 9, 26)

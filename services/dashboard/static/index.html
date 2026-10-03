@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NYC Air Quality Dashboard</title>
+<meta name="description" content="Real-time Air Quality Monitoring Dashboard for New York City - Big Data Project">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script><script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg-primary:#0a0e1a;--bg-secondary:#111827;--bg-card:#1a1f35;--bg-card-hover:#222845;
+  --border:#2a3055;--border-glow:rgba(99,102,241,.3);
+  --text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#64748b;
+  --accent:#6366f1;--accent-glow:rgba(99,102,241,.15);
+  --green:#10b981;--yellow:#f59e0b;--orange:#f97316;--red:#ef4444;--purple:#a855f7;--maroon:#991b1b;
+  --radius:16px;--radius-sm:10px;
+}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:var(--bg-primary);color:var(--text-primary);line-height:1.6;overflow-x:hidden}
+
+/* -- Navbar ------------------------------------------- */
+.navbar{position:sticky;top:0;z-index:100;background:rgba(10,14,26,.85);backdrop-filter:blur(20px) saturate(180%);border-bottom:1px solid var(--border);padding:0 2rem;display:flex;align-items:center;height:64px;gap:1.5rem}
+.navbar .logo{display:flex;align-items:center;gap:.6rem;font-weight:700;font-size:1.15rem;letter-spacing:-.02em}
+.navbar .logo svg{width:28px;height:28px}
+.navbar .nav-links{display:flex;gap:.25rem;margin-left:auto}
+.navbar .nav-links a{padding:.5rem 1rem;border-radius:var(--radius-sm);color:var(--text-secondary);text-decoration:none;font-size:.85rem;font-weight:500;transition:all .2s}
+.navbar .nav-links a:hover,.navbar .nav-links a.active{color:var(--text-primary);background:var(--accent-glow)}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:pulse-dot 2s infinite;margin-right:.3rem;display:inline-block}
+@keyframes pulse-dot{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(16,185,129,.5)}50%{opacity:.7;box-shadow:0 0 0 6px rgba(16,185,129,0)}}
+
+/* -- Layout ------------------------------------------- */
+.container{max-width:1440px;margin:0 auto;padding:1.5rem 2rem 3rem}
+.section{margin-bottom:2.5rem;animation:fadeUp .6s ease-out both}
+.section:nth-child(2){animation-delay:.1s}.section:nth-child(3){animation-delay:.2s}
+.section:nth-child(4){animation-delay:.3s}.section:nth-child(5){animation-delay:.4s}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+.section-title{font-size:1.3rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:.5rem}
+.section-title .icon{font-size:1.4rem}
+
+/* -- KPI Cards ---------------------------------------- */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem}
+.kpi-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem 1.5rem;transition:all .3s;position:relative;overflow:hidden}
+.kpi-card:hover{transform:translateY(-4px);border-color:var(--border-glow);box-shadow:0 8px 32px rgba(99,102,241,.1)}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}
+.kpi-card:nth-child(1)::before{background:linear-gradient(90deg,var(--accent),var(--purple))}
+.kpi-card:nth-child(2)::before{background:linear-gradient(90deg,var(--green),#34d399)}
+.kpi-card:nth-child(3)::before{background:linear-gradient(90deg,var(--yellow),var(--orange))}
+.kpi-card:nth-child(4)::before{background:linear-gradient(90deg,var(--red),#f87171)}
+.kpi-card:nth-child(5)::before{background:linear-gradient(90deg,var(--purple),#c084fc)}
+.kpi-card:nth-child(6)::before{background:linear-gradient(90deg,#06b6d4,#22d3ee)}
+.kpi-label{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);font-weight:600;margin-bottom:.35rem}
+.kpi-value{font-size:2rem;font-weight:800;letter-spacing:-.03em;background:linear-gradient(135deg,var(--text-primary),var(--text-secondary));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.kpi-sub{font-size:.75rem;color:var(--text-muted);margin-top:.25rem}
+
+/* -- Map ---------------------------------------------- */
+.map-wrap{border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);height:480px;position:relative}
+#map{height:100%;width:100%;background:var(--bg-secondary)}
+.map-legend{position:absolute;bottom:20px;right:20px;background:rgba(26,31,53,.92);backdrop-filter:blur(12px);border-radius:var(--radius-sm);padding:.75rem 1rem;z-index:1000;font-size:.78rem;border:1px solid var(--border)}
+.map-legend .legend-item{display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem}
+.map-legend .legend-item:last-child{margin-bottom:0}
+.legend-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0}
+
+/* -- Charts ------------------------------------------- */
+.chart-container{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;position:relative}
+.chart-container canvas{max-height:380px}
+
+/* -- Tables ------------------------------------------- */
+.table-wrap{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.table-wrap table{width:100%;border-collapse:collapse}
+.table-wrap th{background:rgba(99,102,241,.08);color:var(--text-secondary);font-size:.75rem;text-transform:uppercase;letter-spacing:.06em;font-weight:600;padding:.75rem 1rem;text-align:left;border-bottom:1px solid var(--border);position:sticky;top:0}
+.table-wrap td{padding:.65rem 1rem;border-bottom:1px solid rgba(42,48,85,.5);font-size:.85rem;color:var(--text-secondary)}
+.table-wrap tr:hover td{background:rgba(99,102,241,.04);color:var(--text-primary)}
+.table-scroll{max-height:400px;overflow-y:auto}
+.table-scroll::-webkit-scrollbar{width:6px}
+.table-scroll::-webkit-scrollbar-track{background:transparent}
+.table-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* -- Badges ------------------------------------------- */
+.badge{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .6rem;border-radius:6px;font-size:.72rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.badge-good{background:rgba(16,185,129,.15);color:var(--green)}
+.badge-moderate{background:rgba(245,158,11,.15);color:var(--yellow)}
+.badge-unhealthy-sg{background:rgba(249,115,22,.15);color:var(--orange)}
+.badge-unhealthy{background:rgba(239,68,68,.15);color:var(--red)}
+.badge-very-unhealthy{background:rgba(168,85,247,.15);color:var(--purple)}
+.badge-hazardous{background:rgba(153,27,27,.15);color:var(--maroon)}
+.badge-escalate{background:rgba(239,68,68,.15);color:var(--red)}
+.badge-recovered{background:rgba(16,185,129,.15);color:var(--green)}
+.badge-unknown{background:rgba(100,116,139,.15);color:var(--text-muted)}
+
+/* -- Cluster Cards ------------------------------------ */
+.cluster-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}
+.cluster-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;transition:all .3s}
+.cluster-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.cluster-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.75rem}
+.cluster-name{font-weight:700;font-size:1rem}
+.cluster-share{font-size:.8rem;color:var(--accent);font-weight:600}
+.cluster-desc{font-size:.82rem;color:var(--text-muted);margin-bottom:.75rem;line-height:1.5}
+.cluster-stats{display:grid;grid-template-columns:1fr 1fr;gap:.4rem}
+.cluster-stat{display:flex;justify-content:space-between;font-size:.78rem;padding:.25rem .4rem;border-radius:4px;background:rgba(99,102,241,.05)}
+.cluster-stat .stat-label{color:var(--text-muted)}
+.cluster-stat .stat-value{color:var(--text-primary);font-weight:600}
+
+/* -- Empty State -------------------------------------- */
+.empty-state{text-align:center;padding:3rem;color:var(--text-muted)}
+.empty-state .empty-icon{font-size:3rem;margin-bottom:1rem;opacity:.4}
+.empty-state p{font-size:.9rem}
+
+/* -- Loading ------------------------------------------ */
+.loading{display:flex;justify-content:center;align-items:center;padding:2rem;gap:.4rem}
+.loading .dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:bounce .6s infinite alternate}
+.loading .dot:nth-child(2){animation-delay:.2s}.loading .dot:nth-child(3){animation-delay:.4s}
+@keyframes bounce{to{transform:translateY(-12px);opacity:.3}}
+
+/* -- Responsive --------------------------------------- */
+@media(max-width:768px){
+  .navbar{padding:0 1rem}.container{padding:1rem}
+  .kpi-grid{grid-template-columns:1fr 1fr}.map-wrap{height:350px}
+  .navbar .nav-links{gap:0}.navbar .nav-links a{padding:.5rem .6rem;font-size:.78rem}
+}
+</style>
+  <style>
+    .leaflet-layer,
+    .leaflet-control-zoom-in,
+    .leaflet-control-zoom-out,
+    .leaflet-control-attribution {
+      filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+    }
+  </style>
+</head>
+<body>
+
+<!-- -- Navbar ------------------------------------------ -->
+<nav class="navbar">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    <span>NYC AirQ</span>
+    <span class="live-dot"></span>
+  </div>
+  <div class="nav-links">
+    <a href="#overview" class="active">Overview</a>
+    <a href="#map">Map</a>
+    <a href="#trends">Trends</a>
+    <a href="#alerts">Alerts</a>
+    <a href="#analytics">Analytics</a>
+  </div>
+</nav>
+
+<div class="container">
+
+  <!-- -- KPI Overview ----------------------------------- -->
+  <section class="section" id="overview">
+    <h2 class="section-title"><span class="icon">📊</span> Dashboard Overview</h2>
+    <div class="kpi-grid" id="kpi-grid">
+      <div class="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+  </section>
+
+  <!-- -- Map -------------------------------------------- -->
+  <section class="section" id="map-section">
+    <h2 class="section-title"><span class="icon">🗺️</span> Station Map – New York City</h2>
+    <div class="map-wrap">
+      <div id="map"></div>
+      <div class="map-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div> Good (0-50)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--yellow)"></div> Moderate (51-100)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--orange)"></div> USG (101-150)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div> Unhealthy (151-200)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--purple)"></div> Very Unhealthy (201-300)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--maroon)"></div> Hazardous (301+)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- -- Trends Chart ----------------------------------- -->
+  <section class="section" id="trends">
+    <h2 class="section-title"><span class="icon">📈</span> AQI Trends by Borough</h2>
+    <div class="chart-container">
+      <canvas id="aqi-chart"></canvas>
+    </div>
+  </section>
+
+  <!-- -- Alerts ----------------------------------------- -->
+  <section class="section" id="alerts">
+    <h2 class="section-title"><span class="icon">🚨</span> Alert History</h2>
+    <div class="table-wrap">
+      <div class="table-scroll" id="alerts-table-wrap">
+        <div class="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- -- Analytics: Cluster Profiles -------------------- -->
+  <section class="section" id="analytics">
+    <h2 class="section-title"><span class="icon">🤖</span> K-Means Cluster Profiles</h2>
+    <div class="cluster-grid" id="cluster-grid">
+      <div class="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    </div>
+  </section>
+
+  <!-- -- Analytics: Daily Summary ----------------------- -->
+  <section class="section" id="daily">
+    <h2 class="section-title"><span class="icon">📅</span> Daily AQI Summary</h2>
+    <div class="table-wrap">
+      <div class="table-scroll" id="daily-table-wrap">
+        <div class="loading"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+const API = window.location.origin;
+
+// -- Helpers -----------------------------------------
+function aqiColor(aqi) {
+  if (aqi == null) return '#64748b';
+  if (aqi <= 50) return '#10b981';
+  if (aqi <= 100) return '#f59e0b';
+  if (aqi <= 150) return '#f97316';
+  if (aqi <= 200) return '#ef4444';
+  if (aqi <= 300) return '#a855f7';
+  return '#991b1b';
+}
+function aqiLevel(aqi) {
+  if (aqi == null) return 'N/A';
+  if (aqi <= 50) return 'Good';
+  if (aqi <= 100) return 'Moderate';
+  if (aqi <= 150) return 'Unhealthy SG';
+  if (aqi <= 200) return 'Unhealthy';
+  if (aqi <= 300) return 'Very Unhealthy';
+  return 'Hazardous';
+}
+function aqiBadgeClass(level) {
+  if (!level) return 'badge-unknown';
+  const l = level.toLowerCase().replace(/\s+/g, '-');
+  if (l.includes('good')) return 'badge-good';
+  if (l.includes('moderate')) return 'badge-moderate';
+  if (l.includes('unhealthy') && l.includes('sg')) return 'badge-unhealthy-sg';
+  if (l.includes('very')) return 'badge-very-unhealthy';
+  if (l.includes('unhealthy')) return 'badge-unhealthy';
+  if (l.includes('hazardous')) return 'badge-hazardous';
+  return 'badge-unknown';
+}
+// Tên trạm/cụm đến từ OpenAQ và DB -> escape trước khi chèn vào innerHTML
+function esc(v) {
+  return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+// peak_hour là giờ trung bình (vd 12.4) -> 12:24
+function fmtHour(h) {
+  if (h == null) return '—';
+  const m = Math.round(h * 60);
+  return String(Math.floor(m / 60) % 24).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+}
+// Giờ hiển thị theo giờ New York (múi giờ của dữ liệu)
+function fmtTime(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return d.toLocaleString('vi-VN', {timeZone:'America/New_York', day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) + ' NYC';
+
+}
+async function fetchJSON(path) {
+  try {
+    const r = await fetch(API + path);
+    return await r.json();
+  } catch (e) {
+    console.error('Fetch error:', path, e);
+    return null;
+  }
+}
+
+// -- KPI Cards ---------------------------------------
+async function loadOverview() {
+  const d = await fetchJSON('/api/overview');
+  if (!d) return;
+  const el = document.getElementById('kpi-grid');
+  el.innerHTML = `
+    <div class="kpi-card"><div class="kpi-label">Active Stations</div><div class="kpi-value">${d.stations}</div><div class="kpi-sub">NYC monitoring network</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Readings</div><div class="kpi-value">${d.readings.toLocaleString()}</div><div class="kpi-sub">Real-time records</div></div>
+    <div class="kpi-card"><div class="kpi-label">Average AQI</div><div class="kpi-value" style="-webkit-text-fill-color:${aqiColor(d.avg_aqi)}">${d.avg_aqi}</div><div class="kpi-sub">${aqiLevel(d.avg_aqi)}</div></div>
+    <div class="kpi-card"><div class="kpi-label">Max AQI</div><div class="kpi-value" style="-webkit-text-fill-color:${aqiColor(d.max_aqi)}">${d.max_aqi}</div><div class="kpi-sub">Peak recorded</div></div>
+    <div class="kpi-card"><div class="kpi-label">Total Alerts</div><div class="kpi-value">${d.alerts}</div><div class="kpi-sub">Notifications sent</div></div>
+    <div class="kpi-card"><div class="kpi-label">Last Reading</div><div class="kpi-value" style="font-size:1.1rem">${fmtTime(d.last_reading)}</div><div class="kpi-sub">Most recent data</div></div>
+  `;
+}
+
+// -- Map ---------------------------------------------
+let map;
+async function loadMap() {
+  map = L.map('map', {zoomControl:true}).setView([40.7128, -74.006], 11);
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
+    attribution:'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ',maxZoom:16
+  }).addTo(map);
+
+  const stations = await fetchJSON('/api/stations');
+  if (!stations) return;
+
+  stations.forEach(s => {
+    if (!s.lat || !s.lon) return;
+    const aqi = s.station_aqi;
+    const color = aqiColor(aqi);
+    const marker = L.circleMarker([s.lat, s.lon], {
+      radius: 10, fillColor: color, color: '#fff', weight: 2,
+      fillOpacity: 0.85, opacity: 0.9
+    }).addTo(map);
+    marker.bindPopup(`
+      <div style="font-family:Inter,sans-serif;min-width:180px">
+        <div style="font-weight:700;font-size:.95rem;margin-bottom:4px">${esc(s.name || 'Station #' + s.location_id)}</div>
+        <div style="color:#94a3b8;font-size:.8rem;margin-bottom:6px">${esc(s.borough || 'Unknown Borough')}</div>
+        <div style="display:flex;justify-content:space-between;font-size:.85rem">
+          <span>AQI</span>
+          <span style="font-weight:700;color:${color}">${aqi != null ? aqi : 'N/A'}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:.85rem">
+          <span>Status</span>
+          <span>${aqiLevel(aqi)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:.85rem">
+          <span>Pollutant</span>
+          <span>${s.dominant_pollutant || '—'}</span>
+        </div>
+        <div style="font-size:.72rem;color:#64748b;margin-top:4px">${fmtTime(s.last_event_time)}</div>
+      </div>
+    `);
+  });
+    setTimeout(() => map.invalidateSize(), 500);
+
+}
+
+// -- Trends Chart ------------------------------------
+let aqiChart;
+const BOROUGH_COLORS = {
+  'Manhattan':'#6366f1','Brooklyn':'#10b981','Queens':'#f59e0b','Bronx':'#ef4444','Staten Island':'#a855f7'
+};
+async function loadTrends() {
+  const data = await fetchJSON('/api/aqi_hourly?hours=168');
+  const canvas = document.getElementById('aqi-chart');
+  if (!data || data.length === 0) {
+    canvas.parentElement.innerHTML = '<div class=\"empty-state\"><div class=\"empty-icon\">📈</div><p>Chua co du lieu AQI theo gio. Hay chay luong Streaming truoc!</p></div>';
+    return;
+  }
+  const labels = [...new Set(data.map(d => d.bucket))].sort();
+  const boroughs = [...new Set(data.map(d => d.borough))];
+  const datasets = boroughs.map(b => {
+    const pts = labels.map(l => {
+      const match = data.find(d => d.borough === b && d.bucket === l);
+      return match ? match.aqi_avg : null;
+    });
+    return {label: b || 'Citywide', data: pts, borderColor:BOROUGH_COLORS[b]||'#64748b', backgroundColor:'transparent', tension:0.4, pointRadius:2, borderWidth:2, spanGaps: true};
+  });
+  
+  const formattedLabels = labels.map(l => {
+    const d = new Date(l);
+    return d.getHours() + ':00 ' + d.getDate() + '/' + (d.getMonth()+1);
+  });
+
+  aqiChart = new Chart(canvas, {
+    type:'line',
+    data: { labels: formattedLabels, datasets: datasets },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      scales:{
+        x:{display:true, grid:{color:'rgba(42,48,85,.4)'}, ticks:{color:'#64748b',font:{size:11},maxTicksLimit:12}},
+        y:{display:true, grid:{color:'rgba(42,48,85,.4)'}, ticks:{color:'#64748b',font:{size:11}}, title:{display:true,text:'AQI',color:'#94a3b8'}}
+      },
+      plugins:{legend:{labels:{color:'#94a3b8',usePointStyle:true,pointStyle:'circle',font:{size:12}}}}
+    }
+  });
+
+}
+
+// -- Alerts Table ------------------------------------
+async function loadAlerts() {
+  const data = await fetchJSON('/api/alerts?limit=50');
+  const wrap = document.getElementById('alerts-table-wrap');
+  if (!data || data.length === 0) {
+    wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>Chua co canh bao nao. He thong se tu dong tao canh bao khi AQI vuot nguong!</p></div>';
+    return;
+  }
+  let html = '<table><thead><tr><th>Time</th><th>Scope</th><th>Borough</th><th>AQI</th><th>Level</th><th>Type</th><th>Pollutant</th></tr></thead><tbody>';
+  data.forEach(a => {
+    const typeCls = a.type === 'ESCALATE' ? 'badge-escalate' : a.type === 'RECOVERED' ? 'badge-recovered' : 'badge-unknown';
+    html += `<tr>
+      <td>${fmtTime(a.created_at)}</td>
+      <td><span class="badge badge-moderate">${a.scope}</span></td>
+      <td>${a.borough || '—'}</td>
+      <td style="font-weight:700;color:${aqiColor(a.aqi)}">${a.aqi || '—'}</td>
+      <td><span class="badge ${aqiBadgeClass(a.level)}">${a.level || '—'}</span></td>
+      <td><span class="badge ${typeCls}">${a.type || '—'}</span></td>
+      <td>${a.dominant_pollutant || '—'}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+// -- Cluster Profiles --------------------------------
+async function loadClusters() {
+  const data = await fetchJSON('/api/cluster_profiles');
+  const grid = document.getElementById('cluster-grid');
+  if (!data || data.length === 0) {
+    grid.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>Chua co ket qua K-Means.</p></div>';
+    return;
+  }
+  
+  
+
+  const clusterColors = ['#10b981','#f59e0b','#f97316','#ef4444','#a855f7'];
+  let html = '';
+  data.forEach((c, i) => {
+    html += '<div class="cluster-card" style="border-top:3px solid ' + clusterColors[i % clusterColors.length] + '">';
+    html += '  <div class="cluster-header">';
+    html += '    <span class="cluster-name">' + esc(c.cluster_name || 'Cluster ' + c.cluster) + '</span>';
+    html += '    <span class="cluster-share">' + (c.share_of_days * 100).toFixed(1) + '%</span>';
+    html += '  </div>';
+    html += '  <div class="cluster-desc" style="margin-bottom:10px;">' + esc(c.description || 'No description') + '</div>';
+    html += '  <div class="cluster-stats">';
+    html += '    <div class="cluster-stat"><span class="stat-label">AQI Mean</span><span class="stat-value" style="color:' + aqiColor(c.aqi_mean) + '">' + c.aqi_mean + '</span></div>';
+    html += '    <div class="cluster-stat"><span class="stat-label">AQI Max</span><span class="stat-value" style="color:' + aqiColor(c.aqi_max) + '">' + c.aqi_max + '</span></div>';
+    html += '    <div class="cluster-stat"><span class="stat-label">Hours >100</span><span class="stat-value">' + c.hours_over_100 + 'h</span></div>';
+    html += '    <div class="cluster-stat"><span class="stat-label">Peak Hour</span><span class="stat-value">' + fmtHour(c.peak_hour) + '</span></div>';
+    html += '    <div class="cluster-stat"><span class="stat-label">PM2.5/O3</span><span class="stat-value">' + c.pm25_o3_ratio + '</span></div>';
+    html += '  </div>';
+    html += '  ';
+    html += '</div>';
+  });
+  grid.innerHTML = html;
+}
+
+// -- Daily Summary Table -----------------------------
+async function loadDaily() {
+  const data = await fetchJSON('/api/daily_summary');
+  const wrap = document.getElementById('daily-table-wrap');
+  if (!data || data.length === 0) {
+    wrap.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>Chua co du lieu daily summary. Hay chay Batch Analytics!</p></div>';
+    return;
+  }
+  let html = '<table><thead><tr><th>Date</th><th>Borough</th><th>AQI</th><th>Level</th><th>Pollutant</th><th>Cluster</th></tr></thead><tbody>';
+  data.forEach(d => {
+    html += `<tr>
+      <td>${d.date_local}</td>
+      <td>${d.borough || '—'}</td>
+      <td style="font-weight:700;color:${aqiColor(d.aqi_daily)}">${d.aqi_daily || '—'}</td>
+      <td><span class="badge ${aqiBadgeClass(d.level)}">${d.level || '—'}</span></td>
+      <td>${d.dominant_pollutant || '—'}</td>
+      <td>${esc(d.cluster_name || '—')}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  wrap.innerHTML = html;
+}
+
+// -- Navbar active state -----------------------------
+function setupNav() {
+  const links = document.querySelectorAll('.nav-links a');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        links.forEach(l => l.classList.remove('active'));
+        const id = e.target.id;
+        const match = [...links].find(l => l.getAttribute('href') === '#' + id || l.getAttribute('href') === '#' + id.replace('-section',''));
+        if (match) match.classList.add('active');
+      }
+    });
+
+}, {threshold:0.3});
+  document.querySelectorAll('.section').forEach(s => observer.observe(s));
+}
+
+// -- Init --------------------------------------------
+async function init() {
+  setupNav();
+  await Promise.all([loadOverview(), loadMap(), loadTrends(), loadAlerts(), loadClusters(), loadDaily()]);
+  // Auto-refresh every 60s
+  setInterval(() => { loadOverview(); }, 60000);
+}
+init();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+

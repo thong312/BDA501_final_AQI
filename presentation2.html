@@ -1,286 +1,490 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Progress Review: Team Presentation 2</title>
-    <!-- Reveal.js core CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reset.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.css">
-    <!-- Theme (Black modern feel) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/theme/black.min.css">
-    <!-- FontAwesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+    <title>Kịch Bản Thuyết Trình Big Data - Nhóm 7</title>
     <style>
-        .reveal .slides section {
-            text-align: left;
-            padding: 10px;
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px 10vw;
+            font-size: 1.2rem;
         }
-        .reveal h1, .reveal h2, .reveal h3 {
-            color: #00d2ff;
-            text-transform: none;
-            text-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
-        }
-        .reveal h1 { font-size: 2.2em; text-align: center; }
-        .reveal h2 { font-size: 1.6em; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;}
-        .reveal p, .reveal li { font-size: 0.8em; line-height: 1.5; color: #e0e0e0; }
-        .highlight { color: #f39c12; font-weight: bold; }
-        
-        .box { 
-            background: rgba(20, 20, 20, 0.8); 
-            border: 1px solid #333; 
-            padding: 20px; 
-            border-radius: 8px; 
-            box-shadow: inset 0 0 20px rgba(0,0,0,1);
-        }
-        .metric-container {
-            display: flex;
-            justify-content: space-around;
-            margin: 20px 0;
-        }
-        .metric {
+
+        h1 {
+            color: #ff9800;
             text-align: center;
-            background: #111;
-            border: 1px solid #444;
-            padding: 15px;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            color: #4fc3f7;
+            border-bottom: 2px solid #333;
+            padding-bottom: 10px;
+            margin-top: 50px;
+            font-size: 1.8rem;
+        }
+
+        .slide-container {
+            background-color: #1e1e1e;
             border-radius: 10px;
-            width: 25%;
+            padding: 30px;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
         }
-        .metric h4 { color: #888; font-size: 0.6em; margin: 0; text-transform: uppercase;}
-        .metric span { font-size: 1.5em; font-weight: bold; color: #00d2ff; }
-        
-        .code-block { 
-            background: #000; 
-            padding: 15px; 
-            border-radius: 5px; 
-            border-left: 3px solid #00d2ff;
-            font-family: 'Courier New', Courier, monospace; 
-            font-size: 0.65em; 
-            color: #2ecc71; 
-            overflow-x: auto;
-            margin-top: 15px;
+
+        .script-text {
+            font-size: 1.4rem;
+            color: #ffffff;
+            margin-bottom: 25px;
         }
-        .status-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 0.5em; font-weight: bold; vertical-align: middle; margin-left: 10px;}
-        .status-done { background: #27ae60; color: #fff; }
-        .status-wip { background: #d35400; color: #fff; }
-        
-        /* Pipeline Animation */
-        .pipeline {
+
+        .script-text p {
+            margin-bottom: 15px;
+        }
+
+        .highlight {
+            color: #f48fb1;
+            font-weight: bold;
+        }
+
+        .tech {
+            color: #69f0ae;
+            font-family: monospace;
+            font-size: 1.5rem;
+        }
+
+        .why-box {
+            background-color: #263238;
+            border-left: 5px solid #00bcd4;
+            padding: 15px 20px;
+            border-radius: 0 8px 8px 0;
+            font-size: 1.1rem;
+            color: #b0bec5;
+        }
+
+        .why-title {
+            color: #00bcd4;
+            font-weight: bold;
+            margin-top: 0;
+            margin-bottom: 10px;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            background: #111;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 30px 0;
-            border: 1px solid #333;
         }
-        .node {
-            text-align: center;
-            width: 80px;
-            z-index: 2;
-        }
-        .node i {
-            font-size: 2em;
-            color: #bdc3c7;
-            background: #222;
-            padding: 15px;
-            border-radius: 50%;
-            border: 2px solid #555;
-            transition: all 0.3s;
-        }
-        .node p {
-            margin-top: 10px;
-            font-size: 0.5em;
-            color: #fff;
-            font-weight: bold;
-            text-align: center;
-        }
-        .node.active i {
-            color: #00d2ff;
-            border-color: #00d2ff;
-            box-shadow: 0 0 15px #00d2ff;
-        }
-        
-        .edge {
-            flex-grow: 1;
-            height: 4px;
-            background: #333;
-            margin: 0 -10px 30px -10px;
-            position: relative;
-            z-index: 1;
-        }
-        
-        /* Particle animation moving along the edge */
-        .particle {
-            position: absolute;
-            top: -3px;
-            left: 0;
-            width: 10px;
-            height: 10px;
-            background: #00d2ff;
-            border-radius: 50%;
-            box-shadow: 0 0 10px #00d2ff;
-            animation: flow 2s infinite linear;
-        }
-        .particle.p2 { animation-delay: 0.6s; background: #2ecc71; box-shadow: 0 0 10px #2ecc71; }
-        .particle.p3 { animation-delay: 1.2s; background: #f1c40f; box-shadow: 0 0 10px #f1c40f; }
 
-        @keyframes flow {
-            0% { left: 0; opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 1; }
-            100% { left: 100%; opacity: 0; }
+        .nav-buttons {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            background-color: #333;
+            color: white;
+            border: 1px solid #555;
+            padding: 15px 25px;
+            font-size: 1.2rem;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #555;
+        }
+
+        .action {
+            color: #ffeb3b;
+            font-style: italic;
+            font-size: 1.2rem;
         }
     </style>
 </head>
+
 <body>
-    <div class="reveal">
-        <div class="slides">
 
-            <!-- Slide 1: Title -->
-            <section style="text-align: center; padding-top: 5%;">
-                <h1>NYC Air Quality System</h1>
-                <h3 style="color: #f39c12;">Team Presentation 2: Progress & Evidence</h3>
-                <p>Real-time Kafka Streams, Spark Data Lake (S3), and Machine Learning</p>
-                
-                <!-- Animated Pipeline -->
-                <div class="pipeline">
-                    <div class="node active">
-                        <i class="fa-solid fa-cloud-arrow-down"></i>
-                        <p>OpenAQ API</p>
-                    </div>
-                    <div class="edge"><div class="particle"></div></div>
-                    <div class="node active">
-                        <i class="fa-solid fa-database"></i>
-                        <p>Kafka</p>
-                    </div>
-                    <div class="edge"><div class="particle p2"></div></div>
-                    <div class="node active">
-                        <i class="fa-solid fa-bolt"></i>
-                        <p>Spark ETL</p>
-                    </div>
-                    <div class="edge"><div class="particle p3"></div></div>
-                    <div class="node active">
-                        <i class="fa-solid fa-bucket"></i>
-                        <p>S3 (LocalStack)</p>
-                    </div>
-                    <div class="edge"><div class="particle"></div></div>
-                    <div class="node active">
-                        <i class="fa-solid fa-server"></i>
-                        <p>PostgreSQL</p>
-                    </div>
-                </div>
-            </section>
+    <h1>KỊCH BẢN THUYẾT TRÌNH - AQI ANALYTICS</h1>
+    <div style="text-align: center; color: #888; margin-bottom: 40px;">Bấm Mũi tên Trái/Phải hoặc cuộn chuột để xem các
+        Slide</div>
 
-            <!-- Slide 2: Ingestion -->
-            <section>
-                <h2>1. Working Data Ingestion <span class="status-badge status-done">IMPLEMENTED</span></h2>
-                <div class="box">
-                    <p>Luồng Ingestion bằng Python <code>poller</code> gọi API OpenAQ định kỳ, bóc tách cấu trúc và đẩy vào Kafka Broker.</p>
-                    
-                    <div class="metric-container">
-                        <div class="metric"><h4>Kafka Topics</h4><span>5</span></div>
-                        <div class="metric"><h4>Msg/Poll</h4><span>243</span></div>
-                        <div class="metric"><h4>Fail Rate</h4><span>0%</span></div>
-                    </div>
-                    
-                    <p><span class="highlight">Log Thực Tế (Docker):</span></p>
-                    <div class="code-block">
-2026-09-26 17:00:03,380 - INFO - Starting Poller Service...
-2026-09-26 17:00:08,405 - INFO - Published metadata for 74 locations.
-2026-09-26 17:01:05,244 - INFO - Measurement poll complete: ok=243, failed=0, ratio=0.00
-2026-09-26 17:12:02,033 - INFO - Measurement poll complete: ok=227, failed=0, ratio=0.00
-2026-09-26 17:23:04,044 - INFO - Measurement poll complete: ok=232, failed=0, ratio=0.00
-                    </div>
-                </div>
-            </section>
-
-            <!-- Slide 3: Spark Data Processing -->
-            <section>
-                <h2>2. Spark Data Lake Pipeline <span class="status-badge status-done">IMPLEMENTED</span></h2>
-                <div class="box">
-                    <p>Hệ thống chia làm 3 tầng dữ liệu trên <strong>S3 (LocalStack)</strong>. Batch Script đã chạy thành công qua M7 (Bronze->Silver) và M9 (Silver->Gold).</p>
-                    
-                    <div class="metric-container">
-                        <div class="metric"><h4>Data Objects</h4><span>54 Files</span></div>
-                        <div class="metric"><h4>Total Size</h4><span>128 KB (Test)</span></div>
-                        <div class="metric"><h4>Format</h4><span>Parquet + Snappy</span></div>
-                    </div>
-                    
-                    <p><span class="highlight">Cấu trúc thư mục thực tế trên S3 Bucket (aq-lake):</span></p>
-                    <div class="code-block">
-2026-09-26 17:18:42        533 bronze/openaq/measurements/ingest_date=2026-09-26/...json.gz
-2026-09-26 17:25:47       6094 silver/measurements/year=2026/month=9/...snappy.parquet
-2026-09-26 17:26:30       2224 gold/fact_hourly/date_local=2026-09-26/...snappy.parquet
-2026-09-26 17:26:39       1504 gold/fact_daily_aqi/date_local=2026-09-26/...snappy.parquet
-2026-09-26 17:26:51       1501 gold/cluster_features/date_local=2026-09-26/...snappy.parquet
-                    </div>
-                </div>
-            </section>
-
-            <!-- Slide 4: ML & NoSQL -->
-            <section>
-                <h2>3. Analytics, ML & Delivery <span class="status-badge status-done">IMPLEMENTED</span></h2>
-                <div class="box">
-                    <p>Spark SQL (M10) phân tích các trạm, chạy KMeans Clustering, sau đó ghi trực tiếp vào Lược đồ <code>analytics</code> của PostgreSQL DB.</p>
-                    <ul>
-                        <li><strong>Spark MLlib:</strong> Trích xuất Vector Feature (Mean AQI, Hours > 100).</li>
-                        <li><strong>Fallback Logic:</strong> KMeans sập khi <code>points < K</code>. Đã được fix bằng lớp bảo vệ tự động tạo Dummy Model khi dữ liệu mồi quá thưa.</li>
-                        <li><strong>Postgres Warehouse:</strong> Dữ liệu ghi qua JDBC driver thành công vào các bảng như <code>daily_summary</code>, <code>region_stats</code>.</li>
-                    </ul>
-                    <div class="code-block">
-2026-09-26 17:27:19 - INFO - Khởi chạy KMeans Clustering... (K=2..7)
-2026-09-26 17:27:21 - WARNING - Chỉ có 1 dòng, không thể chuẩn hoá KMeans. Tạo dữ liệu giả.
-2026-09-26 17:36:20 - INFO - Đang ghi vào PostgreSQL Schema Analytics...
-2026-09-26 17:36:25 - INFO - Đã ghi xong Analytics Dashboard!
-                    </div>
-                </div>
-            </section>
-
-            <!-- Slide 5: Known Issues -->
-            <section>
-                <h2>4. Technical Risks & Resolution</h2>
-                <div class="box">
-                    <ul>
-                        <li><span class="highlight">Lỗi Data Quality (M7):</span> Dữ liệu bị cờ là STALE do timestamp giả lập (ingested_at - datetime_utc > 3 giờ).<br>
-                        <em>Fix:</em> Đồng bộ lại rule trong <code>backfill_archive.py</code> để bypass luồng nạp mồi.</li>
-                        <li><span class="highlight">Lỗi KMeans Out of Bounds (M10):</span> Model cố gắng nhóm 1 dòng dữ liệu thành 2-7 cụm.<br>
-                        <em>Fix:</em> Thêm giới hạn <code>max_k = min(7, count)</code> và Logic dự phòng Bypass mô hình khi không đủ tập mẫu phân tích.</li>
-                        <li><span class="highlight">Lỗi Missing Dependency Postgres (M10):</span> Driver org.postgresql không có sẵn trên Spark Worker.<br>
-                        <em>Fix:</em> Inject package <code>org.postgresql:postgresql:42.7.2</code> thông qua <code>--packages</code> lúc spark-submit.</li>
-                    </ul>
-                </div>
-            </section>
-            
-            <!-- Slide 6: Next Steps -->
-            <section>
-                <h2>5. Plan for Demo (Session 10) <span class="status-badge status-wip">PENDING</span></h2>
-                <div class="box">
-                    <ul>
-                        <li><strong>Thử tải lượng lớn:</strong> Thu thập Real-time 7 ngày (thay vì dữ liệu giả lập 24h).</li>
-                        <li><strong>Hoàn thiện M8 (MapReduce):</strong> Hoàn thành mã nguồn phân tích MapReduce và đối soát kết quả với bảng Gold của Spark.</li>
-                        <li><strong>BI Dashboard:</strong> Khởi tạo Metabase đọc dữ liệu từ Postgres <code>analytics.*</code> schema.</li>
-                    </ul>
-                    <p style="text-align: center; margin-top: 30px; font-size: 1.2em; color: #f39c12;">Ready for Final Presentation!</p>
-                </div>
-            </section>
-
+    <!-- SLIDE 1 & 2: Context -->
+    <div class="slide-container" id="slide-1">
+        <h2>SLIDE 1 & 2: Vấn đề & Thành quả đạt được (Context & Goals)</h2>
+        <div class="script-text">
+            <p>Dạ thưa thầy và các bạn. Vấn đề lớn nhất của hệ thống quan trắc hiện nay là dữ liệu bị xé lẻ ở quá nhiều
+                nguồn, định dạng khác nhau và tăng lên liên tục hàng giờ. Dữ liệu thô chỉ trả về Nồng độ khí thải, chứ
+                không tính sẵn điểm số AQI cho chúng ta. Người dân thì cần cảnh báo ngay lập tức, nhưng lại rất ghét bị
+                spam tin nhắn liên tục khi chỉ số cứ dao động mấp mé ngưỡng nguy hiểm.</p>
+            <p>Để giải quyết bài toán này, nhóm em đã đạt được 3 thành tựu cốt lõi:</p>
+            <p>1. Xây dựng luồng cảnh báo thời gian thực <span class="highlight">dưới 1 phút</span> và cơ chế chống
+                Spam.<br>
+                2. Phân loại thành công các 'Kiểu ngày ô nhiễm' bằng AI (K-Means).<br>
+                3. Phân tích Không gian & Thời gian bằng Spark SQL.</p>
+        </div>
+        <div class="why-box">
+            <p class="why-title">💡 TẠI SAO LẠI LÀM VẬY?</p>
+            <ul>
+                <li><strong>Ghi nhớ:</strong> Nhấn mạnh việc tính sẵn AQI. Vì người dùng cuối không hiểu PM2.5 = 35µg/m³
+                    là gì, họ chỉ cần biết AQI = 150 (Màu đỏ - Xấu). Nên hệ thống của mình phải làm việc nặng nhọc này
+                    thay cho họ.</li>
+            </ul>
         </div>
     </div>
 
-    <!-- Reveal.js Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.3.1/reveal.min.js"></script>
+    <!-- SLIDE 3: Justification -->
+    <div class="slide-container" id="slide-3">
+        <h2>SLIDE 3: Tại sao bài toán này cần Big Data (Justification)</h2>
+        <div class="script-text">
+            <p>Tại sao bài toán này bắt buộc phải dùng Big Data? Lý do nằm ở 3 chữ V kinh điển:</p>
+            <p><strong>- VOLUME (Khối lượng):</strong> Nhóm đã xử lý lượng dữ liệu khổng lồ lên tới <span
+                    class="highlight">hơn 1,16 triệu bản ghi</span> ở lớp thô Bronze.<br>
+                <strong>- VELOCITY (Tốc độ):</strong> Dữ liệu chảy liên tục theo thời gian thực vào các vòi Kafka. Hệ
+                thống phải tính toán và quét ra cảnh báo chỉ trong vòng <span class="highlight">1 phút</span>.<br>
+                <strong>- VARIETY (Đa dạng):</strong> Có tới <span class="highlight">6 loại khí thải</span> khác nhau
+                (Bụi mịn PM2.5, PM10, Ozone, CO...) với đủ loại đơn vị đo lường khác biệt.
+            </p>
+        </div>
+    </div>
+
+    <!-- SLIDE 4: Architecture -->
+    <div class="slide-container" id="slide-4">
+        <h2>SLIDE 4: Kiến trúc tổng thể (End-to-end Architecture)</h2>
+        <div class="script-text">
+            <p><span class="action">(Vừa nói vừa dùng tay/laser chỉ vào sơ đồ từ trên xuống dưới)</span></p>
+            <p>Đây là 'Bản đồ tác chiến' của tụi em. Hệ thống chia làm 2 luồng rõ rệt:</p>
+            <p><strong>Luồng Real-time (Bên phải):</strong> Từ API OpenAQ, con bot Poller sẽ hút dữ liệu đẩy vào <span
+                    class="tech">Kafka</span>. Từ Kafka, <span class="tech">Spark Streaming</span> sẽ tách làm 2 nhánh:
+                Một nhánh bắn cảnh báo Telegram, nhánh kia đổ dữ liệu thô xuống Hồ Data Lake (Bronze).</p>
+            <p><strong>Luồng Batch (Bên trái):</strong> Từ lớp Bronze, tụi em dùng <span class="tech">Spark Batch</span>
+                để làm sạch (Silver), sau đó tính toán tổng hợp (Gold). Song song đó, viết một luồng <span
+                    class="tech">MapReduce</span> chạy độc lập để đối chiếu chéo kết quả với Spark nhằm đảm bảo tính
+                chính xác tuyệt đối.</p>
+            <p>Cuối cùng, dữ liệu ở lớp Gold sẽ được đưa qua Machine Learning và đẩy ra <span
+                    class="tech">PostgreSQL</span> để vẽ biểu đồ Dashboard.</p>
+        </div>
+    </div>
+
+    <!-- SLIDE 5: Real-time Path -->
+    <div class="slide-container" id="slide-5">
+        <h2>SLIDE 5 & 6: Luồng Cảnh Báo 1 Phút (Real-time Path)</h2>
+        <div class="script-text">
+            <p>Đi sâu vào luồng Real-time, điểm tụi em tâm đắc nhất nằm ở <span class="tech">Spark Streaming</span>. Nó
+                chạy 1 Job duy nhất nhưng xử lý song song 2 nhánh:</p>
+            <p><strong>Nhánh A (Storage):</strong> Ghi toàn bộ dữ liệu thô vào Data Lake. Không làm rơi rớt bất kỳ giọt
+                dữ liệu nào.<br>
+                <strong>Nhánh B (Alerts):</strong> Quét AQI tức thời mỗi 1 phút.
+            </p>
+            <p>Đặc biệt, tụi em đã lập trình logic <span class="highlight">Chống Spam (No alert spam)</span>. Nếu không
+                khí dao động quanh mốc 100, hệ thống sẽ ghim trạng thái và không báo liên tục. Nhờ tính năng lưu mốc
+                (Offset) của Kafka, lỡ máy chủ bị sập và khởi động lại, nó sẽ đọc tiếp đúng chỗ bị đứt mà <span
+                    class="highlight">hoàn toàn không sinh ra các cảnh báo trùng lặp (duplicate alerts)</span>.</p>
+        </div>
+        <div class="why-box">
+            <p class="why-title">💡 TẠI SAO LẠI LÀM VẬY?</p>
+            <ul>
+                <li><strong>Tại sao phải xài Kafka ở giữa mà không cho API bắn thẳng vào Spark?</strong> (Câu hỏi ăn
+                    điểm). Trả lời: <em>"Dạ thưa thầy, Kafka đóng vai trò là 'Bộ giảm xóc'. Lỡ cụm Spark bị sập để bảo
+                        trì, API cứ gửi dữ liệu về thì Kafka sẽ giữ lại toàn bộ trong ổ cứng. Khi Spark bật lên lại, nó
+                        sẽ hút tiếp từ Kafka mà không bị mất bất kỳ dữ liệu nào ạ."</em></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SLIDE 5 & 6 -->
+    <div class="slide-container" id="slide-5">
+        <h2>SLIDE 5 & 6: Luồng Thời Gian Thực & Làm Sạch Dữ Liệu</h2>
+        <div class="script-text">
+            <p>Đây là trái tim của hệ thống Streaming. Dữ liệu từ OpenAQ được đẩy vào <span class="tech">Kafka</span>.
+                Sau đó <span class="tech">Spark Streaming</span> sẽ đứng ra hứng.</p>
+            <p>Tại đây, tụi em chia làm 2 nhánh chạy song song: Nhánh A ghi toàn bộ dữ liệu thô (Raw) thẳng xuống Data
+                Lake. Nhánh B thì tính toán AQI tức thời và bắn cảnh báo về Telegram.</p>
+            <p>Về việc làm sạch dữ liệu, bộ lọc của chúng em đã thẳng tay vứt bỏ <span class="highlight">8.150 dòng bị
+                    lỗi số âm</span> (do cảm biến hỏng) và gọt đi <span class="highlight">hơn 57.700 dòng bị trùng
+                    lặp</span>. Trả lại 94% dữ liệu hoàn toàn tinh khiết.</p>
+        </div>
+        <div class="why-box">
+            <p class="why-title">💡 TẠI SAO LẠI LÀM VẬY?</p>
+            <ul>
+                <li><strong>Tại sao chia 2 nhánh?</strong> Để tách biệt logic. Nhánh A lo lưu trữ (làm nguyên liệu cho
+                    Batch sau này). Nhánh B lo cảnh báo khẩn cấp.</li>
+                <li><strong>Lỗi âm là gì?</strong> Cảm biến ngoài trời lâu lâu bị chập mạch, gửi về chỉ số bụi PM2.5 =
+                    -15. Không khí không thể âm được nên phải xóa để K-Means không bị nhiễu.</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SLIDE 7 -->
+    <div class="slide-container" id="slide-7">
+        <h2>SLIDE 7: MapReduce vs Spark (Đối chiếu chéo)</h2>
+        <div class="script-text">
+            <p>Để chứng minh độ chính xác tuyệt đối, chúng em không chỉ dùng Spark mà còn viết một chương trình <span
+                    class="tech">MapReduce</span> độc lập để chạy đối chiếu chéo.</p>
+            <p>Nhiệm vụ của MapReduce là đọc lại dữ liệu, lọc trùng, tính trung bình và max AQI, sau đó so sánh kết quả
+                1-1 với Spark. Kết quả là <span class="highlight">Khớp nhau 100% - Không lệch một số thập phân
+                    nào.</span></p>
+        </div>
+        <div class="why-box">
+            <p class="why-title">💡 TẠI SAO LẠI LÀM VẬY?</p>
+            <ul>
+                <li><strong>Tại sao không dùng Combiner trong MapReduce?</strong> (Câu này giảng viên RẤT HAY HỎI). Trả
+                    lời: <em>"Dạ thưa thầy, vì yêu cầu bài toán có bước Lọc Trùng (Deduplicate). Nếu dùng Combiner, nó
+                        sẽ tính tổng ở Local trước khi lọc trùng, dẫn đến việc dữ liệu bị trùng lặp ở 2 Mapper khác nhau
+                        sẽ bị cộng dồn 2 lần làm sai kết quả. Nên tụi em chấp nhận hi sinh một chút chi phí Shuffle để
+                        lấy sự chính xác tuyệt đối ạ."</em></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SLIDE 9: Phân tích Spark SQL (Q1, Q2, Q3) -->
+    <div class="slide-container" id="slide-9">
+        <h2>SLIDE 9: Kết quả Phân tích từ Spark SQL (Q1, Q2, Q3)</h2>
+        <div class="script-text">
+            <p>Sau khi có dữ liệu sạch ở lớp Gold, tụi em dùng <span class="tech">Spark SQL</span> để đặt ra 3 câu hỏi
+                nghiệp vụ (Q1, Q2, Q3) nhằm tìm ra quy luật ô nhiễm tại New York.</p>
+
+            <p><strong>Câu hỏi 1 (Q1) - Nơi nào ô nhiễm nhất?</strong><br>
+                Tụi em đếm số ngày mà AQI vượt ngưỡng 100 (mức kém). Kết quả: <span class="highlight">Manhattan</span>
+                luôn là điểm nóng nhất (dẫn đầu năm 2025 với 9 ngày, và đồng hạng nhất năm 2026 với 7 ngày). Điều này
+                hợp lý vì đây là trung tâm tài chính kẹt xe nhất New York.</p>
+
+            <p><strong>Câu hỏi 2 (Q2) - Yếu tố Mùa vụ & Thời gian:</strong><br>
+                Nhìn vào biểu đồ bên trái (AQI theo giờ), nồng độ ô nhiễm luôn đạt đỉnh vào buổi tối <span
+                    class="highlight">(18h - 22h)</span>. Xét theo tháng, <span class="highlight">tháng 7</span> (mùa hè
+                nóng bức) là lúc không khí tệ nhất, trong khi <span class="highlight">tháng 10</span> lại trong lành
+                nhất ở cả 5 quận.</p>
+
+            <p><strong>Câu hỏi 3 (Q3) - Sự kiện ô nhiễm diện rộng:</strong><br>
+                Vào ngày 18/02/2026, Spark phát hiện ra có tới <span class="highlight">11 trên tổng số 21 trạm
+                    (52.4%)</span> đồng loạt báo động đỏ cùng một lúc. Điều này chứng tỏ đây là một đám mây khói bụi bao
+                trùm toàn thành phố, chứ không phải do một vài cảm biến bị hỏng hóc cục bộ.</p>
+        </div>
+        <div class="why-box">
+            <p class="why-title">💡 TẠI SAO LẠI LÀM VẬY?</p>
+            <ul>
+                <li><strong>Mục đích của Q3:</strong> Thường bị hỏi là "Lỡ cái máy đo ngày hôm đó nó bị khùng thì sao?".
+                    Q3 chính là câu trả lời: Hơn một nửa số trạm ở các quận khác nhau cùng báo động đỏ cùng 1 thời điểm
+                    -> Dữ liệu hoàn toàn đáng tin cậy.</li>
+                <li><strong>Mục đích của Q2:</strong> Giúp đưa ra lời khuyên cho người dân: Hạn chế tập thể dục ngoài
+                    trời vào buổi tối (sau 18h).</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SLIDE 10: Query Plan -->
+    <div class="slide-container" id="slide-10">
+        <h2>SLIDE 10: Giải phẫu Query Plan (Cách Spark tối ưu hóa)</h2>
+        <div class="script-text">
+            <p>Việc viết SQL thì ai cũng viết được, nhưng làm sao để biết Spark chạy đoạn SQL đó tối ưu hay chưa? Tụi em
+                đã dùng lệnh <code>EXPLAIN</code> để mổ xẻ <strong>Kế hoạch thực thi vật lý (Physical Plan)</strong> của
+                câu hỏi Q1.</p>
+
+            <p>Có 3 điểm tối ưu (Optimization) đáng đồng tiền bát gạo mà Spark Catalyst đã tự động làm:</p>
+
+            <p><strong>Thứ nhất: Early Filtering (Lọc từ trong trứng nước).</strong><br>
+                Nhờ lưu dữ liệu bằng định dạng <span class="tech">Parquet</span>, Spark chỉ đọc những Block dữ liệu có
+                AQI > 100 từ ổ cứng, bỏ qua toàn bộ những ngày sạch. Điều này giúp giảm 90% lượng dữ liệu bị nạp thừa
+                vào RAM.</p>
+
+            <p><strong>Thứ hai: Broadcast Hash Join.</strong><br>
+                Khi Join bảng Sự kiện khổng lồ (hơn 1 triệu dòng) với bảng Trạm đo (có vài chục dòng), Spark đủ thông
+                minh để <span class="highlight">không băm bảng lớn ra</span>. Nó ép bảng Trạm đo (nhỏ) gửi Broadcast đến
+                tất cả các Worker. Kỹ thuật này triệt tiêu hoàn toàn sự nghẽn mạng (Network Shuffle).</p>
+
+            <p><strong>Thứ ba: Shuffle (Exchange) bắt buộc.</strong><br>
+                Spark chỉ chịu xáo trộn dữ liệu qua mạng (Exchange) ở những bước bắt buộc không thể né tránh, đó là khi
+                dùng hàm Gom nhóm theo Quận (HashAggregate) và hàm Xếp hạng (Window Rank).</p>
+        </div>
+        <div class="why-box">
+            <p class="why-title">💡 TẠI SAO LẠI LÀM VẬY?</p>
+            <ul>
+                <li><strong>Từ khóa ăn điểm tối đa:</strong> "Predicate Pushdown" (Đẩy điều kiện lọc xuống tận ổ cứng
+                    khi đọc file Parquet) và "Broadcast Hash Join" (Chống kẹt mạng khi Join bảng lớn - bảng nhỏ). Thầy
+                    cô mà nghe sinh viên nhắc đến 2 từ này khi giải thích Query Plan thì auto cho điểm A.</li>
+            </ul>
+        </div>
+    </div>
+
+
+
+    <!-- SLIDE 12 (CHI TIẾT VỀ K-MEANS) -->
+    <div class="slide-container" id="slide-12">
+        <h2>SLIDE 12: Machine Learning - K-Means Clustering</h2>
+        <div class="script-text">
+            <p>Để nâng cấp hệ thống từ "Chỉ hiển thị số liệu" lên mức "Thông minh", tụi em đã áp dụng Machine Learning
+                bằng thuật toán <span class="tech">K-Means</span>.</p>
+            <p><strong>Dùng để làm gì?</strong><br> Máy học sẽ nạp toàn bộ lịch sử đo đạc, bóc tách các đặc trưng
+                (Features) như: Trung bình AQI, AQI đỉnh điểm, Số giờ vượt ngưỡng độc hại... Từ đó tự động gom các ngày
+                ở New York thành 5 cụm (k=5) từ "Ngày rất trong lành" đến "Ngày ô nhiễm nặng".</p>
+            <p><strong>Tại sao phải dùng K-Means?</strong><br> Khác với các bài toán có đáp án sẵn, dữ liệu môi trường
+                tự nhiên ban đầu <strong>KHÔNG HỀ CÓ NHÃN</strong> (Không ai gán nhãn sẵn ngày nào là sạch, ngày nào là
+                bẩn). K-Means là thuật toán học không giám sát (Unsupervised Learning). Khả năng của nó là tự tìm ra các
+                <strong>Quy luật ẩn giấu</strong> bên trong sự pha trộn của 6 loại khí thải mà con mắt hay tư duy
+                IF-ELSE của con người không thể nhìn thấy.
+            </p>
+            <p>Dựa vào Cụm số 5 mà AI tìm ra (chiếm 3% số ngày, AQI cực cao), hệ thống Dashboard sẽ tự động nhận diện và
+                phát đi thông điệp "Khuyên người dân ở trong nhà".</p>
+        </div>
+        <div class="why-box">
+            <p class="why-title">💡 TẠI SAO LẠI LÀM VẬY?</p>
+            <ul>
+                <li><strong>Ghi nhớ:</strong> Nhấn mạnh chữ "Dữ liệu KHÔNG có nhãn" (Unlabeled data) và "Quy luật ẩn
+                    giấu" (Hidden patterns). Đó là bản chất tại sao phải dùng AI thay vì dùng câu lệnh truy vấn WHERE
+                    bình thường.</li>
+            </ul>
+        </div>
+    </div>
+
+
+    <!-- SLIDE 12 (CHI TIẾT VỀ K-MEANS) -->
+    <div class="slide-container" id="slide-12">
+        <h2>SLIDE 12: Machine Learning - K-Means Clustering</h2>
+        <div class="script-text">
+            <p>Để nâng cấp hệ thống từ mức "Chỉ hiển thị số liệu" lên mức "Thông minh", tụi em đã đưa <strong>Machine
+                    Learning (thuật toán K-Means)</strong> vào 파ypeline (luồng xử lý).</p>
+
+            <p><span class="action">(Chỉ tay vào góc dưới bên trái)</span><br>
+                Mỗi "điểm dữ liệu" đưa cho AI học là <strong>một ngày tại một trạm đo</strong>. Tụi em không chỉ đút cho
+                AI con số AQI khô khan, mà bóc tách ra 5 đặc trưng (Features) cực kỳ phức tạp: AQI trung bình, AQI đỉnh
+                điểm, Số giờ vượt ngưỡng, Giờ đạt đỉnh, và Tỷ lệ Bụi mịn/Ozone.</p>
+
+            <p><span class="action">(Chỉ tay vào biểu đồ cột màu cam bên trái)</span><br>
+                Câu hỏi đặt ra là: Nên chia New York thành mấy kiểu thời tiết? Tụi em để máy tự quyết định bằng cách đo
+                chỉ số <strong>Silhouette</strong>. Như trên hình, khi chọn <code>k = 5</code>, chỉ số Silhouette đạt
+                đỉnh cao nhất là 0.499. Nghĩa là dữ liệu được phân tách rõ ràng và hoàn hảo nhất thành 5 cụm.</p>
+
+            <p><span class="action">(Chỉ tay vào bảng bên phải)</span><br>
+                Đây là kết quả AI tự gom cụm! Vô cùng bất ngờ là nó chia rất đúng với thực tế, từ "Rất trong lành" đến
+                "Ô nhiễm nặng". <br>
+                Điều đáng sợ nhất nằm ở dòng cuối cùng: Có đúng <span class="highlight">3% số ngày</span> (chiếm tỷ lệ
+                rất nhỏ) nhưng lại mang <strong>AQI Max lên tới 158</strong> (Mức cực kỳ độc hại). Đây chính là "sát thủ
+                thầm lặng".</p>
+
+            <p><strong>Ý nghĩa thực tiễn:</strong> Dựa vào cụm số 5 này, Dashboard của tụi em sẽ tự động nhận diện nếu
+                ngày hôm nay có dấu hiệu rơi vào nhóm 3% này, nó sẽ lập tức dán nhãn đỏ và phát đi thông điệp <em>"Báo
+                    động: Hạn chế ra đường"</em> cho người dân.</p>
+        </div>
+        <div class="why-box">
+            <p class="why-title">💡 TẠI SAO LẠI LÀM VẬY?</p>
+            <ul>
+                <li><strong>Ghi nhớ về Silhouette Score:</strong> Nếu thầy hỏi "Tại sao k=5 mà không phải số khác?", hãy
+                    trả lời: <em>"Dạ tụi em chạy thử k từ 2 đến 7. Chỉ số Silhouette đo mức độ tương đồng trong cùng một
+                        cụm và sự khác biệt giữa các cụm. k=5 cho điểm số cao nhất (0.499), chứng tỏ các ngày ô nhiễm
+                        được tách biệt rõ ràng nhất ạ."</em></li>
+                <li><strong>Ghi nhớ về Features:</strong> AI không thông minh nếu ta chỉ cho nó 1 con số. Nhờ tụi em
+                    tính thêm "Tỷ lệ Bụi/Ozone" (Fine-dust / ozone ratio) nên AI mới phân biệt được ngày ô nhiễm do khói
+                    xe (bụi) với ngày ô nhiễm do nắng nóng gắt (Ozone).</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SLIDE 14 & 15 -->
+    <div class="slide-container" id="slide-14">
+        <h2>SLIDE 14, 15 & TỔNG KẾT: Trade-offs & Demo</h2>
+        <div class="script-text">
+            <p><span class="action">(Chỗ này mở Dashboard Demo lên cho thầy cô xem, demo cảnh báo Telegram)</span></p>
+            <p>Dĩ nhiên hệ thống nào cũng có sự đánh đổi (Trade-offs). Ví dụ tụi em phải dùng PostgreSQL thay vì NoSQL
+                để dễ dàng cập nhật trạng thái cảnh báo, bù lại thì tốc độ ghi sẽ chậm hơn một chút khi Scale lớn.</p>
+            <p><strong>TỔNG KẾT LẠI:</strong> Chúng em đã xây dựng thành công 1 hệ thống chạy hoàn chỉnh từ đầu đến
+                cuối, xử lý <span class="highlight">1.16 triệu dòng</span> dữ liệu, đảm bảo đối chiếu MapReduce - Spark
+                lệch 0%, và mô hình K-Means gom cụm thành công.</p>
+            <p>Em xin cảm ơn thầy và các bạn đã lắng nghe. Chúng em rất mong nhận được câu hỏi từ thầy ạ!</p>
+        </div>
+    </div>
+    <!-- SLIDE 9: Phân tích Spark SQL (Q1, Q2, Q3) -->
+    <div class="slide-container" id="slide-9">
+        <h2>SLIDE 9: Spark SQL chạy như thế nào? (Q1, Q2, Q3)</h2>
+        <div class="script-text">
+            <p>Ở bước này, tụi em đóng vai trò là một Data Analyst. Tụi em đã viết các câu lệnh <code>SELECT</code>,
+                <code>GROUP BY</code> y hệt như SQL thông thường, nhưng nạp nó vào <span class="tech">Spark SQL</span>.
+            </p>
+            <p>Sự bá đạo của Spark SQL là nó không cần hệ quản trị CSDL nào (như MySQL hay SQL Server). Tụi em cứ chĩa
+                nó thẳng vào hàng ngàn file Parquet trên ổ cứng, và nó quét 1 triệu dòng trong nháy mắt.</p>
+
+            <p><strong>Cách tụi em chạy Q1 (Nơi nào ô nhiễm nhất?):</strong><br>
+                Tụi em dùng lệnh <code>FILTER</code> lấy các ngày có AQI > 100, rồi <code>GROUP BY</code> theo từng
+                Quận. Kết quả Spark trả về lập tức: <span class="highlight">Manhattan</span> dẫn đầu. Điều này hoàn toàn
+                trùng khớp với thực tế vì đây là khu vực kẹt xe nhất.</p>
+
+            <p><strong>Cách tụi em chạy Q2 (Mùa vụ & Thời gian):</strong><br>
+                Tụi em <code>GROUP BY</code> theo Cột Tháng và Cột Giờ, rồi dùng hàm <code>AVG</code> (Trung bình).
+                Spark vẽ ra quy luật rõ ràng: Buổi tối (18h-22h) và Tháng 7 (mùa hè nóng) là lúc dễ ngạt thở nhất.</p>
+
+            <p><strong>Cách tụi em chạy Q3 (Sự kiện diện rộng):</strong><br>
+                Thay vì đếm theo Quận, tụi em <code>GROUP BY</code> theo Từng Ngày, đếm số trạm vượt ngưỡng 100 cùng
+                lúc. Ngày 18/02/2026, Spark đếm được có <span class="highlight">11/21 trạm cùng nổ chuông báo động
+                    đỏ</span>. Nhờ câu Query này, tụi em biết chắc chắn hôm đó có 1 đám khói bụi bao trùm toàn thành phố
+                chứ không phải do máy đo bị hỏng.</p>
+        </div>
+        <div class="why-box">
+            <p class="why-title">💡 BÍ KÍP CHỐNG CÂU HỎI KHÓ</p>
+            <ul>
+                <li><strong>Câu hỏi:</strong> "Sao không import vô MySQL rồi viết SQL cho khỏe mà xài Spark SQL chi cho
+                    cực?"</li>
+                <li><strong>Trả lời:</strong> "Dạ, vì file Parquet không đẩy vào MySQL bằng lệnh SQL thường được. Dùng
+                    Spark SQL giúp tụi em truy vấn TRỰC TIẾP lên Big Data (file Parquet) đang phân tán ở nhiều máy, tận
+                    dụng được sức mạnh RAM của cụm cluster ạ."</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- SLIDE 12 (CHI TIẾT VỀ K-MEANS) -->
+    <div class="slide-container" id="slide-12">
+        <h2>SLIDE 12: Machine Learning chạy như thế nào? (K-Means)</h2>
+        <div class="script-text">
+            <p>Để nâng cấp hệ thống thành "Thông minh", tụi em đã viết code dùng thư viện <span class="tech">Spark
+                    MLlib</span> để chạy thuật toán K-Means. Cách tụi em làm cực kỳ sát với thực tế như sau:</p>
+
+            <p><strong>Bước 1: Nặn Dữ Liệu (Vector Assembler)</strong><br>
+                AI không hiểu được bảng dữ liệu. Tụi em phải lấy 5 cột số (AQI trung bình, max, số giờ vượt ngưỡng...)
+                ép nó lại thành 1 cột duy nhất, gọi là <strong>"Vector Đặc Trưng"</strong>. Mỗi ngày bây giờ là 1 điểm
+                tọa độ trong không gian 5 chiều.</p>
+
+            <p><strong>Bước 2: Tìm số cụm tối ưu (Silhouette)</strong><br>
+                Tụi em viết vòng lặp cho máy chạy thử việc chia nhỏ New York từ 2 đến 7 nhóm. Tại <code>k = 5</code>,
+                máy báo điểm <strong>Silhouette cao nhất (0.499)</strong>. Nghĩa là việc chia thành 5 kiểu thời tiết là
+                đẹp và tách bạch nhất.</p>
+
+            <p><strong>Bước 3: Máy tự học (Model Fitting)</strong><br>
+                Tụi em gọi lệnh <code>model.fit()</code>. Spark lập tức rải 5 cái "Tâm" ngẫu nhiên, rồi quét đi quét lại
+                hàng triệu dòng dữ liệu để kéo 5 cái Tâm đó vào đúng vị trí của 5 nhóm ô nhiễm. Quá trình này chạy tự
+                động 100%.</p>
+
+            <p><strong>Bước 4: Dán nhãn tự động</strong><br>
+                Sau khi huấn luyện xong, máy tự động nhét <span class="highlight">3% số ngày cực đoan</span> vào Cụm số
+                3 (AQI Max lên tới 158). Giờ đây, cứ có dữ liệu của 1 ngày mới chảy vào, AI sẽ tự đo khoảng cách xem
+                ngày đó giống với cái Tâm nào nhất, và lập tức báo lên màn hình Dashboard: <em>"Hôm nay thuộc Cụm 3 -
+                    Cảnh báo hạn chế ra đường!"</em></p>
+        </div>
+        <div class="why-box">
+            <p class="why-title">💡 BÍ KÍP CHỐNG CÂU HỎI KHÓ</p>
+            <ul>
+                <li><strong>Câu hỏi:</strong> "Thuật toán K-Means này tụi em có huấn luyện (Train) bằng nhãn (Label)
+                    trước không?"</li>
+                <li><strong>Trả lời:</strong> "Dạ không thưa thầy. Dữ liệu thời tiết tự nhiên không ai dán nhãn sẵn
+                    (Unlabeled). K-Means là học không giám sát (Unsupervised). Sự tuyệt vời của hệ thống tụi em là MÁY
+                    TỰ TÌM RA QUY LUẬT để chia thành 5 nhóm, con người không hề can thiệp ạ."</li>
+            </ul>
+        </div>
+    </div>
+
     <script>
-        Reveal.initialize({
-            hash: true,
-            transition: 'slide',
-            controls: true,
-            progress: true,
-            center: true,
-            backgroundTransition: 'fade'
+        // Chỉ dùng để di chuyển bằng nút mũi tên cho ngầu
+        document.addEventListener('keydown', function (event) {
+            if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+                window.scrollBy({ top: window.innerHeight * 0.8, behavior: 'smooth' });
+            }
+            if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+                window.scrollBy({ top: -window.innerHeight * 0.8, behavior: 'smooth' });
+            }
         });
     </script>
 </body>
+
 </html>
