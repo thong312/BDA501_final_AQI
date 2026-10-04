@@ -1,0 +1,14 @@
+{
+  "date_from": "2024-08-01",
+  "date_to": "2026-06-30",
+  "bronze_rows": 1052394,
+  "parsed_rows": 1052394,
+  "in_date_range_and_bbox": 1052394,
+  "quality_flags": {
+    "NEGATIVE": 8149,
+    "OK": 1044244,
+    "OUT_OF_RANGE": 1
+  },
+  "after_quality_filter": 1044244,
+  "silver_rows_after_dedupe": 986468
+}

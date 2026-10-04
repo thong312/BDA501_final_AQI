@@ -1,41 +1,46 @@
+import json
+from datetime import date
+
 import pytest
-from pyspark.sql import SparkSession
-import sys
-from pathlib import Path
 
-sys.path.append(str(Path(__file__).parent.parent))
-from jobs.batch.clean_bronze_to_silver import transform_silver
+pytest.importorskip("pyspark")
+from jobs.batch.clean_bronze_to_silver import parse_bronze, prepare_metadata, transform_silver  # noqa: E402
 
-@pytest.fixture(scope="session")
-def spark():
-    return (SparkSession.builder.master("local[1]").appName("pytest-spark").getOrCreate())
+BBOX = "-74.26,40.49,-73.70,40.92"
+
+
+def bronze(spark, records):
+    rows = [(json.dumps(r), i) for i, r in enumerate(records)]
+    return spark.createDataFrame(rows, "value string, offset long")
+
+
+def rec(**over):
+    r = {"sensor_id": 1, "location_id": 101, "value": 20.0, "datetime_utc": "2026-09-27T02:00:00Z",
+         "lat": 40.73, "lon": -73.82, "ingested_at": "2026-09-27T02:05:00Z", "source": "openaq-api"}
+    r.update(over)
+    return r
+
 
 def test_transform_silver(spark):
-    bronze_data = [
-        # Bản ghi chuẩn
-        ('{"sensor_id": 1, "value": 20.0, "datetime_utc": "2026-09-26T14:00:00Z", "datetime_local": "2026-09-26T10:00:00-04:00", "lat": 40.7, "lon": -73.9, "ingested_at": "2026-09-26T14:05:00Z"}',),
-        # Bản ghi trùng (sẽ bị dedupe bỏ, giữ dòng ingested_at mới nhất)
-        ('{"sensor_id": 1, "value": 25.0, "datetime_utc": "2026-09-26T14:00:00Z", "datetime_local": "2026-09-26T10:00:00-04:00", "lat": 40.7, "lon": -73.9, "ingested_at": "2026-09-26T14:10:00Z"}',),
-        # Bản ghi lỗi âm
-        ('{"sensor_id": 1, "value": -5.0, "datetime_utc": "2026-09-26T15:00:00Z", "datetime_local": "2026-09-26T11:00:00-04:00", "lat": 40.7, "lon": -73.9, "ingested_at": "2026-09-26T15:05:00Z"}',)
-    ]
-    df_bronze = spark.createDataFrame(bronze_data, ["value"])
-    
-    meta_data = [(1, "pm25", "µg/m³", "Test Station")]
-    df_meta = spark.createDataFrame(meta_data, ["sensor_id", "meta_parameter", "meta_units", "meta_location_name"])
-    
-    rules = {"pm25": {"min": 0.0, "max": 1000.0}}
-    bbox = "-74.26,40.49,-73.70,40.92"
-    
-    df_final, df_parsed, df_ok = transform_silver(df_bronze, df_meta, rules, bbox)
-    
-    results = df_final.collect()
-    
-    # Assert
-    assert len(results) == 1 # 1 trùng bị loại, 1 lỗi âm bị loại
-    row = results[0]
-    
-    assert row["value"] == 25.0 # Lấy bản update ingested_at mới hơn
-    assert row["parameter"] == "pm25" # Lấy từ join metadata
-    assert row["quality_flag"] == "OK"
-    assert "borough" in df_final.columns
+    df = parse_bronze(bronze(spark, [
+        rec(),
+        rec(value=25.0, ingested_at="2026-09-27T02:10:00Z"),        # trùng, bản mới hơn -> giữ
+        rec(value=-5.0, datetime_utc="2026-09-27T03:00:00Z"),       # NEGATIVE
+        rec(value=5000.0, datetime_utc="2026-09-27T01:00:00Z"),     # OUT_OF_RANGE
+        rec(sensor_id=2, datetime_utc="2026-09-27T01:00:00Z"),      # NO_METADATA
+        rec(datetime_utc="2026-09-26T12:00:00Z", ingested_at="2026-09-26T18:00:00Z"),  # STALE: giữ
+        rec(datetime_utc="2026-09-27T05:00:00Z"),                   # 01:00 ngày 27 NY -> ngoài ngày
+        rec(lat=34.05, lon=-118.24, datetime_utc="2026-09-26T20:00:00Z"),  # ngoài bbox
+    ]))
+    meta = prepare_metadata(spark.createDataFrame(
+        [(1, "pm25", "µg/m³", "Queens College", 40.73, -73.82)],
+        "sensor_id int, parameter string, units string, location_name string, lat double, lon double"))
+    rows = transform_silver(df, meta, BBOX, date(2026, 9, 26), date(2026, 9, 26)) \
+        .orderBy("event_time").collect()
+
+    assert [(r["value"], r["quality_flag"]) for r in rows] == [(20.0, "STALE"), (25.0, "OK")]
+    ok = rows[1]
+    assert str(ok["date_local"]) == "2026-09-26" and ok["hour_local"] == 22  # giờ New York
+    assert ok["parameter"] == "pm25" and ok["location_name"] == "Queens College"
+    assert ok["borough"] == "Queens"
+    assert (ok["year"], ok["month"]) == (2026, 9)

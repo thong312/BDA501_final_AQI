@@ -231,7 +231,7 @@ raw = (spark.readStream.format("kafka")
      - Áp hàm thuần `common.alert_rules.decide(state, aqi, event_time)` theo thứ tự thời gian.
      - Ghi state mới bằng upsert có điều kiện `WHERE excluded.last_event_time > station_status.last_event_time`.
   8. **Cảnh báo cấp vùng:** `region_level = max(alerted_level)` của các trạm cùng `borough`. So với `realtime.region_status`; nếu đổi và qua được luật (mục 8) → tạo alert.
-  9. **Ghi alert:** `realtime.alerts` (`ON CONFLICT (alert_id) DO NOTHING`) và publish `aq.alerts.level-changed.v1`.
+  9. **Ghi alert:** `realtime.alerts` (`ON CONFLICT (alert_id) DO NOTHING`) cho cả alert cấp trạm (`scope=station`) và cấp vùng (`scope=region`). **Chỉ alert cấp vùng** được publish `aq.alerts.level-changed.v1`, qua outbox: sau khi commit, publish các dòng `published_at IS NULL` và đánh dấu khi Kafka xác nhận.
   10. **Timeout:** trạm/vùng đang ≥ USG mà `last_event_time` cũ hơn 3h → chuyển `UNKNOWN`, tạo alert `type=UNKNOWN`, **không** gửi RECOVERED.
   - Bước 6–9 dùng `psycopg` trong **một transaction**.
 
@@ -260,10 +260,11 @@ raw = (spark.readStream.format("kafka")
 
 - Đọc Bronze của ngày cần xử lý (tham số `--date`).
 - Parse JSON, ép schema; với bản ghi streaming: join metadata để có `parameter`, `units`, `location_name`.
-- Lọc bbox NYC; gắn `quality_flag` như 6.2 bước 3.
+- Lọc bbox NYC; gắn `quality_flag` như 6.2 bước 3 (STALE tính theo `ingested_at − datetime_utc`). Batch loại `NO_METADATA`, `NEGATIVE`, `OUT_OF_RANGE` nhưng **giữ `STALE`** (bản đo trễ vẫn là dữ liệu lịch sử hợp lệ); MapReduce áp đúng quy tắc này.
 - Dedupe theo `(sensor_id, datetime_utc)`, giữ bản `ingested_at` mới nhất.
 - Thêm `date_local`, `hour_local`, `borough`.
-- Ghi Parquet `s3a://aq-lake/silver/measurements/` `partitionBy("year","month")`, `coalesce` để mỗi partition vài file (**compact**).
+- Ngày New York D nằm trong `ingest_date` D và D+1 → đọc cả hai rồi lọc theo `date_local`.
+- Ghi Parquet `s3a://aq-lake/silver/measurements/` `partitionBy("year","month","date_local")`, mỗi ngày một file (**compact**), `partitionOverwriteMode=dynamic` để chạy lại một ngày cho kết quả như nhau (idempotent).
 - Xuất `validation/sensor_lookup.json`.
 - Log số dòng trước/sau từng bước (dùng cho mục data quality của báo cáo).
 
@@ -317,9 +318,9 @@ Image: `timescale/timescaledb-ha` (có TimescaleDB + PostGIS). DDL trong `sql/`.
 |---|---|---|---|
 | `stations` | bảng | `location_id PK, name, lat, lon, geom geography(Point), borough, updated_at` | upsert khi làm mới metadata |
 | `readings` | **hypertable** theo `event_time` | `location_id, sensor_id, parameter, value, units, aqi_instant, event_time, ingested_at`; PK `(sensor_id, event_time)` | retention 30 ngày |
-| `station_status` | bảng | `location_id PK, station_aqi, dominant_pollutant, alerted_level, candidate_level, candidate_count, last_event_time, last_alert_at, updated_at` | **state của luật cảnh báo** |
-| `region_status` | bảng | `borough PK, region_level, trigger_location_id, candidate_level, candidate_count, last_event_time, last_alert_at` | 5 dòng |
-| `alerts` | bảng | `alert_id PK, scope, borough, trigger_location_id, aqi, level, prev_level, type, dominant_pollutant, event_time, created_at` | index `(borough, created_at DESC)` |
+| `station_status` | bảng | `location_id PK, station_aqi, dominant_pollutant, alerted_level, candidate_level, candidate_count, last_event_time, last_alert_at, last_alert_level, updated_at` | **state của luật cảnh báo**; `alerted_level = -1` là UNKNOWN; `last_alert_level` phục vụ cooldown |
+| `region_status` | bảng | `borough PK, region_level, trigger_location_id, candidate_level, candidate_count, last_event_time, last_alert_at, last_alert_level, updated_at` | 5 dòng (seed sẵn) |
+| `alerts` | bảng | `alert_id PK, scope, borough, trigger_location_id, aqi, level, prev_level, type, dominant_pollutant, event_time, created_at, published_at` | index `(borough, created_at DESC)`; `published_at` = outbox Kafka |
 | `aqi_hourly_by_borough` | **continuous aggregate** | `borough, bucket (1h), aqi_max, aqi_avg, n_readings` | từ `readings` join `stations` |
 
 ### Schema `analytics` (ghi bởi batch)
@@ -413,7 +414,7 @@ URGENT_MIN_LEVEL: 3
 ```
 s3a://aq-lake/
   bronze/openaq/measurements/ingest_date=YYYY-MM-DD/*.json.gz   (streaming + backfill, bất biến)
-  silver/measurements/year=YYYY/month=MM/*.parquet
+  silver/measurements/year=YYYY/month=M/date_local=YYYY-MM-DD/*.parquet
   gold/dim_station/  gold/fact_hourly/  gold/fact_daily_aqi/
   gold/mart_region_daily/  gold/mart_temporal/  gold/cluster_features/
   validation/mr_daily_stats/date=YYYY-MM-DD/

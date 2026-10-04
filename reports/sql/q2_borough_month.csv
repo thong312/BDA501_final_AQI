@@ -1,0 +1,61 @@
+borough,month,aqi_avg,station_days_over_100
+Bronx,1,41.0,0
+Bronx,2,43.8,1
+Bronx,3,41.3,0
+Bronx,4,38.7,0
+Bronx,5,42.8,0
+Bronx,6,51.8,4
+Bronx,7,50.0,2
+Bronx,8,46.3,4
+Bronx,9,38.4,0
+Bronx,10,29.0,0
+Bronx,11,29.5,0
+Bronx,12,37.9,0
+Brooklyn,1,41.6,7
+Brooklyn,2,50.2,14
+Brooklyn,3,40.9,0
+Brooklyn,4,31.1,0
+Brooklyn,5,32.7,1
+Brooklyn,6,36.8,0
+Brooklyn,7,55.9,4
+Brooklyn,8,50.7,2
+Brooklyn,9,44.7,0
+Brooklyn,10,23.6,0
+Brooklyn,11,37.6,2
+Brooklyn,12,43.8,1
+Manhattan,1,46.4,5
+Manhattan,2,47.2,4
+Manhattan,3,40.4,0
+Manhattan,4,36.3,0
+Manhattan,5,33.7,2
+Manhattan,6,40.1,2
+Manhattan,7,54.2,3
+Manhattan,8,46.0,2
+Manhattan,9,39.5,0
+Manhattan,10,26.5,0
+Manhattan,11,39.8,1
+Manhattan,12,46.9,3
+Queens,1,45.1,1
+Queens,2,49.7,6
+Queens,3,42.0,0
+Queens,4,35.2,0
+Queens,5,37.5,0
+Queens,6,45.8,3
+Queens,7,52.8,3
+Queens,8,54.1,4
+Queens,9,38.3,0
+Queens,10,24.3,0
+Queens,11,35.5,0
+Queens,12,41.7,0
+Staten Island,1,47.8,0
+Staten Island,2,42.4,0
+Staten Island,3,33.8,0
+Staten Island,4,26.8,0
+Staten Island,5,28.1,0
+Staten Island,6,31.6,0
+Staten Island,7,42.8,0
+Staten Island,8,38.0,0
+Staten Island,9,32.7,0
+Staten Island,10,24.9,0
+Staten Island,11,32.3,0
+Staten Island,12,41.8,0

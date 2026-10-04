@@ -1,0 +1,121 @@
+borough,hour_local,aqi_avg,n_station_hours
+Bronx,0,35.1,1318
+Bronx,1,34.6,1319
+Bronx,2,34.5,1286
+Bronx,3,33.9,1323
+Bronx,4,33.0,1324
+Bronx,5,33.0,1338
+Bronx,6,33.0,1338
+Bronx,7,33.2,1323
+Bronx,8,34.0,1314
+Bronx,9,35.5,1325
+Bronx,10,36.1,1328
+Bronx,11,37.0,1339
+Bronx,12,39.0,1324
+Bronx,13,40.5,1327
+Bronx,14,41.7,1335
+Bronx,15,42.2,1332
+Bronx,16,41.8,1347
+Bronx,17,41.0,1350
+Bronx,18,39.5,1353
+Bronx,19,38.6,1344
+Bronx,20,37.7,1328
+Bronx,21,37.2,1329
+Bronx,22,36.7,1329
+Bronx,23,35.8,1328
+Brooklyn,0,37.7,2250
+Brooklyn,1,37.4,2269
+Brooklyn,2,36.9,2255
+Brooklyn,3,37.1,2247
+Brooklyn,4,36.9,2244
+Brooklyn,5,37.1,2250
+Brooklyn,6,37.7,2249
+Brooklyn,7,38.4,2250
+Brooklyn,8,38.6,2252
+Brooklyn,9,38.6,2262
+Brooklyn,10,37.9,2258
+Brooklyn,11,37.2,2259
+Brooklyn,12,37.3,2274
+Brooklyn,13,38.1,2276
+Brooklyn,14,38.1,2279
+Brooklyn,15,37.7,2285
+Brooklyn,16,36.7,2288
+Brooklyn,17,36.5,2287
+Brooklyn,18,37.5,2283
+Brooklyn,19,38.8,2272
+Brooklyn,20,40.2,2260
+Brooklyn,21,40.2,2255
+Brooklyn,22,40.1,2259
+Brooklyn,23,38.8,2252
+Manhattan,0,38.2,2002
+Manhattan,1,36.9,2030
+Manhattan,2,36.3,2008
+Manhattan,3,36.1,2005
+Manhattan,4,36.1,2008
+Manhattan,5,36.4,2015
+Manhattan,6,36.7,2016
+Manhattan,7,37.9,2006
+Manhattan,8,39.4,1995
+Manhattan,9,40.9,1995
+Manhattan,10,40.7,1987
+Manhattan,11,39.5,1974
+Manhattan,12,39.0,1977
+Manhattan,13,39.7,1978
+Manhattan,14,40.0,1969
+Manhattan,15,39.9,1980
+Manhattan,16,39.7,1993
+Manhattan,17,39.7,2002
+Manhattan,18,40.3,2008
+Manhattan,19,42.2,2004
+Manhattan,20,43.7,2013
+Manhattan,21,44.0,2014
+Manhattan,22,42.9,2018
+Manhattan,23,40.1,2008
+Queens,0,40.2,1598
+Queens,1,39.8,1614
+Queens,2,39.1,1599
+Queens,3,39.1,1602
+Queens,4,39.0,1605
+Queens,5,39.6,1595
+Queens,6,40.2,1594
+Queens,7,41.3,1582
+Queens,8,41.9,1604
+Queens,9,41.5,1607
+Queens,10,40.3,1612
+Queens,11,39.6,1610
+Queens,12,40.5,1614
+Queens,13,41.5,1605
+Queens,14,41.9,1614
+Queens,15,41.9,1620
+Queens,16,41.1,1633
+Queens,17,40.8,1636
+Queens,18,43.1,1638
+Queens,19,42.4,1632
+Queens,20,43.1,1624
+Queens,21,43.5,1612
+Queens,22,43.4,1617
+Queens,23,42.0,1605
+Staten Island,0,33.8,317
+Staten Island,1,32.5,327
+Staten Island,2,33.4,320
+Staten Island,3,32.0,321
+Staten Island,4,31.3,322
+Staten Island,5,33.4,331
+Staten Island,6,36.1,341
+Staten Island,7,37.4,346
+Staten Island,8,38.8,346
+Staten Island,9,39.3,342
+Staten Island,10,36.2,335
+Staten Island,11,32.0,321
+Staten Island,12,29.9,317
+Staten Island,13,28.9,303
+Staten Island,14,28.7,314
+Staten Island,15,29.7,319
+Staten Island,16,30.3,319
+Staten Island,17,31.1,320
+Staten Island,18,33.5,330
+Staten Island,19,34.4,332
+Staten Island,20,35.0,334
+Staten Island,21,35.3,339
+Staten Island,22,35.8,339
+Staten Island,23,34.8,329
